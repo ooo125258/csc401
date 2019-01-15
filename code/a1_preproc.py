@@ -35,8 +35,8 @@ def preproc1( comment , steps=range(1,11)):
             modComm = modComm.replace(code[1], code[0])
     if 3 in steps:
         print('Remove all URLs http/www/https')
-        modComm = re.sub("http[s]?://[A-Za-z0-9\/\_\.\!\#\$\%\&\\\'\*\+\,\-\:\;\=\?\@\^\|]+", '', modComm)
-        modComm = re.sub("www\.[A-Za-z0-9\/\_\.\!\#\$\%\&\\\'\*\+\,\-\:\;\=\?\@\^\|]+", '', modComm)
+        modComm = re.sub("[\(\[\{]?http[s]?://[A-Za-z0-9\/\_\.\!\#\$\%\&\\\'\*\+\,\-\:\;\=\?\@\^\|]+[\)\]\}]?", '', modComm)
+        modComm = re.sub("[\(\[\{]?www\.[A-Za-z0-9\/\_\.\!\#\$\%\&\\\'\*\+\,\-\:\;\=\?\@\^\|]+[\)\]\}]?", '', modComm)
         print(1)
     if 4 in steps:
         #skip abbr, or others
@@ -70,7 +70,35 @@ def preproc1( comment , steps=range(1,11)):
         # split by ...
         new_modComm.replace('...', ' ... ')
         # split to lst by space.
-        modComm_lst = modComm.rsplit("\s+")
+        modComm_lst = new_modComm.rsplit("\s+")
+        new_modComm_lst = []
+        for word in modComm_lst:
+            word_pos_occupied_by_abbr = [False] * len(modComm_lst)
+            #check pos for abbr
+            for abbr in abbrs:
+                if abbr in word: #need to modify to correct py code
+                    idxs = re.search(word, abbr)#TODO: It may return multiple result
+                    for idx in idxs:
+                        if idx + len(abbr) > len(modComm_lst):
+                            print("Self-defined ERROR at preprocess Step4: the word {} finds abbr {} at index {}.".format(word, abbr, idx))
+                        word_pos_occupied_by_abbr[idx : idx + len(abbr)] = [True] * len(abbr)
+            #then check period outside abbr
+            word_modified = None
+            for i in range(len(word)):
+                if word[i] == '.' and not word_pos_occupied_by_abbr[i]:
+                    if word_modified is None:
+                        word_modified = word[:i] + ' ' + '.' + ' '
+                    else:
+                        word_modified += ' ' + '.' + ' '
+                else:
+                    if word_modified is not None:
+                        word_modified += word[i]
+            if word_modified is None:
+                new_modComm_lst.append(word_modified)
+            else:
+                new_modComm_lst.append(word)
+            #join back the modComm
+            modComm = "".join(new_modComm_lst)
         print(1)
 
 
@@ -89,21 +117,16 @@ def preproc1( comment , steps=range(1,11)):
         #split '
         #merge back clitics
         print('TODO')
-        skip_dict = (
-        ("'s", "2aa357378e348888b6595a11d8c87b89"),
-        ("'m", "2aba15bfd55d18043ff933b876a116b7"),
-        ("'re", "03cf63b4df5083b0420bc25c0d330f0d"),
-        ("'t", "3b586ac06ca44747cd7888928f24f0c2")
-        )
 
-        for code in skip_dict:
-            modComm = modComm.replace(code[0], " " + code[1])
+        word_pos_occupied_by_cites
         new_modComm = ""
+        prev = ""
         for i in modComm:
-            if i != "'":
+            if i == "'" and prev != :
                 new_modComm += i
             else:
                 new_modComm += " " + i + " "
+            prev = i
     if 6 in steps:
         print('TODO')
     if 7 in steps:
