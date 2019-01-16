@@ -55,21 +55,13 @@ Really? Because they're Islamist they're not rational? That's why I don't like i
     if 2 in steps:
         print('Replace HTML character codes with their ASCII equivalent.')
         modComm = html.unescape(modComm)
-        htmlCodes = (
-            ("'", '&#39;'),
-            ('"', '&quot;'),
-            ('>', '&gt;'),
-            ('<', '&lt;'),
-            ('&', '&amp;')
-        )
-        for code in htmlCodes:
-            modComm = modComm.replace(code[1], code[0])
+
     if 3 in steps:
         print('Remove all URLs http/www/https')
         modComm = re.sub(r"[\(\[\{]?http[s]?://[A-Za-z0-9\/\_\.\!\#\$\%\&\\\'\*\+\,\-\:\;\=\?\@\^\|\.]+[\)\]\}]?", '',
                          modComm)
         modComm = re.sub(r"[\(\[\{]?www\.[A-Za-z0-9\/\_\.\!\#\$\%\&\\\'\*\+\,\-\:\;\=\?\@\^\|]+[\)\]\}]?", '', modComm)
-        print(1)
+
     if 4 in steps:
         # skip abbr, or others
 
@@ -100,16 +92,7 @@ Really? Because they're Islamist they're not rational? That's why I don't like i
         new_modComm = re.sub(r"(^|\s)((\w+\.)+\.?)($|\s)", periodHandler, new_modComm)
         modComm = new_modComm
 
-        print('TODO')
-    if 5 in steps:  # To this state, there is space before, then it's cite; there is no space, it's poss.
-        # Notice, it's violated when skip step 4!
-
-        # read from clitics
-        # split '
-        # merge back clitics
-
-
-        print('TODO')
+    if 5 in steps:
         def citeHandler(matched):
             lst = clitics
             sth_matched = str(matched.group())
@@ -122,6 +105,7 @@ Really? Because they're Islamist they're not rational? That's why I don't like i
             return ret
         new_modComm = re.sub(r"(^|\s)(\w*\'\w*)($|\s)", citeHandler, modComm)
         modComm = new_modComm
+
     if 6 in steps:
         print('TODO')
     if 7 in steps:
