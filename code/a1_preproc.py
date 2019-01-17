@@ -181,6 +181,21 @@ def preproc1(comment, steps=range(1, 11)):
             modComm = " ".join(new_modComm_lst)
     if 9 in steps:#4.2.4. 
         print('TODO')
+        modComm_lst = modComm.strip().split()
+        putative_boundaries = [False] * len(modComm_lst)
+
+        #put putative sentence boundaries after all occurences of .?!;:
+        following = False #following: move the boundary after folling quotation marks if any.
+        for i in range(len(modComm_lst)):
+            if re.match("[\.\?\!\;\:]", modComm_lst[i]):
+                putative_boundaries[i] = True
+                following = True
+            elif re.match("[\'\"]", modComm_lst[i]) and putative_boundaries[i - 1]:
+                putative_boundaries[i] = True
+                putative_boundaries[i - 1] = False
+        #Disqualify a period boundary in the following circumstances:
+            #for commonly followed by a capitalized proper name
+
     if 10 in steps:
         modComm = modComm.lower()
 
