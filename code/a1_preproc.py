@@ -12,14 +12,16 @@ indir = '/u/cs401/A1/data/';
 
 abbrs = []
 clitics = []
-stopwords = {}
+stopwords = []
+pn_abbrs = []
+
 
 def init():
-    if len(abbrs) > 0 and len(clitics) > 0:
-        return
+
     global abbrs
     global clitics
     global stopwords
+    global pn_abbrs
 
     if len(abbrs) == 0:
         abbr_filename = "./abbrev.english"
@@ -44,7 +46,20 @@ def init():
         with open(stopwords_filename) as f:
             for line in f:
                 stopwords.append(line.rstrip('\n'))
-        stopwords = set(stopwords)
+        #stopwords = set(stopwords)
+
+    if len(pn_abbrs) == 0:
+        pn_abbrs_filename = "./pn_abbrev.english"
+        if not os.path.isfile(pn_abbrs_filename):
+            pn_abbrs_filename = "/u/cs401/Wordlists/pn_abbrev.english"
+        with open(pn_abbrs_filename) as f:
+            for line in f:
+                add_word = line.rstrip('\n')
+                pn_abbrs.append(add_word)
+                if add_word not in abbrs:
+                    abbrs.append(add_word)
+        #pn_abbrs = set(pn_abbrs)
+
 
 def preproc1(comment, steps=range(1, 11)):
     ''' This function pre-processes a single comment
@@ -56,10 +71,10 @@ def preproc1(comment, steps=range(1, 11)):
     Returns:
         modComm : string, the modified comment 
     '''
-    # comment = "&gt; You mean, besides being one of a handful of states known to be a State sponsor of terrorism?\
-    # You mean like us in the e.g. United States supporting [Cuban terrorists](http://en.wikipedia.org/wiki/Luis_Posada_Carriles) or [Al-Qaeda](http://en.wikipedia.org/wiki/Al-Qaeda)!?? \
-    # &gt;I wouldn't go so far as to say the Mr. Guardian Council... and Supreme Leader are rational - and given they are Islamists,?.?the concept of MAD does not apply.\
-    # Really? Because they're Islamist they're not rational? That's why I don't like it.\n\nAny more! e.g.... alpha... clitic's dogs'. dogs'  t'challa - y'all "
+    comment = "&gt; You mean, besides being one of a handful of states known to be a State sponsor of terrorism?\
+     You mean like us in the e.g. United States supporting [Cuban terrorists](http://en.wikipedia.org/wiki/Luis_Posada_Carriles) or [Al-Qaeda](http://en.wikipedia.org/wiki/Al-Qaeda)!?? \
+     &gt;I wouldn't go so far as to say the Mr. Guardian Council... and Supreme Leader are rational - and given they are Islamists,?.?the concept of MAD does not apply.\
+     Really? Because they're Islamist they're not rational? That's why I don't like it.\n\nAny more! e.g.... alpha... clitic's dogs'. dogs'  t'challa - y'all "
     modComm = ''
     init()
     if 1 in steps:
@@ -131,7 +146,7 @@ def preproc1(comment, steps=range(1, 11)):
         new_modComm = re.sub(r"(^|\s)(\w*\'\w*)($|\s)", citeHandler, modComm)
         modComm = new_modComm
 
-    if 6 in steps:
+    if 6 in steps: #split clitics
         modComm_lst = modComm.strip().split()
         nlp = spacy.load('en', disable=['parser', 'ner'])
         doc = spacy.tokens.Doc(nlp.vocab, words=modComm_lst)
@@ -142,19 +157,19 @@ def preproc1(comment, steps=range(1, 11)):
             # print(token.text, token.lemma_, token.pos_, token.tag_, token.dep_,
             # token.shape_, token.is_alpha, token.is_stop)        #utt = nlp(modComm)
         modComm = " ".join(new_modComm_lst)
-    if 7 in steps:
+    if 7 in steps:#Stop words
         # split to list, remove if in stopwords
         new_modComm_lst = modComm.split()
         new_modComm_lst = [x for x in new_modComm_lst if x.split('/')[0] not in stopwords]
         modComm = " ".join(new_modComm_lst)
         print('TODO')
-    if 8 in steps:
-        #How messy it would be! As 6 and 8 are seperated, the process must be executed again!
-        #I need to revert the step 6 to run nlp again!
+    if 8 in steps:#lemmazation,
+        # How messy it would be! As 6 and 8 are seperated, the process must be executed again!
+        # I need to revert the step 6 to run nlp again!
         modComm_lst = modComm.strip().split()
         modComm_text = []
         modComm_tags = []
-        if len(modComm_lst[0].split('/')) == 2:# It means the 6 is executed already
+        if len(modComm_lst[0].split('/')) == 2:  # It means the 6 is executed already
             for i in modComm_lst:
                 word_split = i.split('/')
                 modComm_text.append(word_split[0])
@@ -167,36 +182,55 @@ def preproc1(comment, steps=range(1, 11)):
         doc = nlp.tagger(doc)
         new_modComm_lst = []
         for token in doc:
-            if token.lemma_[0] == '-' and token.text[0] != '-':##curcumstance to keep token
+            if token.lemma_[0] == '-' and token.text[0] != '-':  ##curcumstance to keep token #TODO: why you?
                 new_modComm_lst.append(token.text)
             else:
-                new_modComm_lst.append(token.lemma_)
+                new_modComm_lst.append(token.text[0] + token.lemma_[1:])
 
         if len(modComm_tags) > 0:
             changed_modComm_lst = []
-            for token in range(len(new_modComm_lst)):
+            for i in range(len(new_modComm_lst)):
                 changed_modComm_lst.append(new_modComm_lst[i] + '/' + modComm_tags[i])
             modComm = " ".join(changed_modComm_lst)
         else:
             modComm = " ".join(new_modComm_lst)
-    if 9 in steps:#4.2.4. 
-        print('TODO')
-        modComm_lst = modComm.strip().split()
-        putative_boundaries = [False] * len(modComm_lst)
+    if 9 in steps:  #new line between sentences 4.2.4.
+        print('TODO')#Mr./NNP Guardian/NNP Council/NNP .../: \n and/CC Supreme/NNP
+        #
 
-        #put putative sentence boundaries after all occurences of .?!;:
-        following = False #following: move the boundary after folling quotation marks if any.
-        for i in range(len(modComm_lst)):
-            if re.match("[\.\?\!\;\:]", modComm_lst[i]):
-                putative_boundaries[i] = True
-                following = True
-            elif re.match("[\'\"]", modComm_lst[i]) and putative_boundaries[i - 1]:
-                putative_boundaries[i] = True
-                putative_boundaries[i - 1] = False
-        #Disqualify a period boundary in the following circumstances:
-            #for commonly followed by a capitalized proper name
+        if len(modComm_lst[0].split('/')) == 2:  # It means the 6 is executed already
+            new_modComm = re.sub(r"([\.\?\!\;\:]\/\S+\s*)", r"\1 \n ", modComm)
+            new_modComm = re.sub(r"\n(\s*[\'\"]\/\S+\s*)", r"\1 \n ", new_modComm)
+            def abbrCheckForName(matched):
+                word = matched.group().strip()
+                word_lst = word.split()
+                if len(word_lst) != 2:
+                    print("Step 9 Error in preprocess: request format: Prof. Rudzicz, actual word: " + word)
+                if word_lst[0].split('/')[0] in pn_abbrs:
+                    return " " + word_lst[0] + " " + word_lst[1]
+                else:
+                    return matched.group()
+            new_modComm = re.sub(r"((\w+\.)+\/\S+\s*)\n(\s*[a-zA-Z])", abbrCheckForName, new_modComm)
+            new_modComm = re.sub(r"([\?\!\:\;]\/\S+\s*)\n(\s*[a-z])", r"\1\2", new_modComm)
+        else:
 
-    if 10 in steps:
+            new_modComm = re.sub(r"([\.\?\!\;\:])", r"\1 \n", modComm)
+            new_modComm = re.sub(r"\n(\s*[\'\"])", r"\1 \n", new_modComm)
+
+            def abbrCheckForName(matched):
+                word = matched.group().strip()
+                word_lst = word.split()
+                if len(word_lst) != 2:
+                    print("Step 9 Error in preprocess: request format: Prof. Rudzicz, actual word: " + word)
+                if word_lst[0] in pn_abbrs:
+                    return " " + word_lst[0] + " " + word_lst[1]
+                else:
+                    return matched.group()
+
+            new_modComm = re.sub(r"(\w+\.)\n(\s*[a-zA-Z])", abbrCheckForName, new_modComm)
+            new_modComm = re.sub(r"([\?\!\:\;])\n(\s*[a-z])", r"\1\2", new_modComm)
+        modComm = new_modComm
+    if 10 in steps:#lowercase
         modComm = modComm.lower()
 
     return modComm
