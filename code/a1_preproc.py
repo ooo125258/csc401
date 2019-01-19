@@ -70,10 +70,10 @@ def preproc1(comment, steps=range(1, 11)):
     Returns:
         modComm : string, the modified comment 
     '''
-    comment = "&gt; You mean, besides being one of a handful of states known to be a State sponsor of terrorism?\
-     You mean like us in the e.g. United States supporting [Cuban terrorists](http://en.wikipedia.org/wiki/Luis_Posada_Carriles) or [Al-Qaeda](http://en.wikipedia.org/wiki/Al-Qaeda)!?? \
-     &gt;I wouldn't go so far as to say the Mr. Guardian Council... and Supreme Leader are rational - and given they are Islamists,?.?the concept of MAD does not apply.\
-     Really? Because they're Islamist they're not rational? That's why I don't like it.\n\nAny more! e.g.... alpha... clitic's dogs'. dogs'  t'challa - y'all 'I don't think it's a good sentence.'"
+    #comment = "&gt; You mean, besides being one of a handful of states known to be a State sponsor of terrorism?\
+    #You mean like us in the e.g. United States supporting [Cuban terrorists](http://en.wikipedia.org/wiki/Luis_Posada_Carriles) or [Al-Qaeda](http://en.wikipedia.org/wiki/Al-Qaeda)!?? \
+    #&gt;I wouldn't go so far as to say the Mr. Guardian Council... and Supreme Leader are rational - and given they are Islamists,?.?the concept of MAD does not apply.\
+    #Really? Because they're Islamist they're not rational? That's why I don't like it.\n\nAny more! e.g.... alpha... clitic's dogs'. dogs'  t'challa - y'all 'I don't think it's a good sentence.'"
     modComm = ''
     init()
     modComm_tags = []
@@ -242,25 +242,8 @@ def preproc1(comment, steps=range(1, 11)):
         new_modComm = re.sub(r"((\w+\.)+)" + r"(" + tag_scanner + r")" + r"\n(\s*\S)", abbrCheckForName, new_modComm)
         #Disqualify newline with ?! when following lowercase
         new_modComm = re.sub(r"([\?\!\:\;])" + r"(" + tag_scanner + r")" + r"\n(\s*^[A-Z])", r"\1\2\3", new_modComm)
-        '''
-                else:
-
-            new_modComm = re.sub(r"([\.\?\!\;\:]\s*)", r"\1 \n", modComm)
-            new_modComm = re.sub(r"\n(\s*[\'\"]\s*)", r"\1 \n", new_modComm)
-
-            def abbrCheckForName(matched):
-                word = matched.group().strip()
-                word_lst = word.split()
-                if len(word_lst) != 2:
-                    print("Step 9 Error in preprocess: request format: Prof. Rudzicz, actual word: " + word)
-                if word_lst[0] in pn_abbrs:
-                    return " " + word_lst[0] + " " + word_lst[1]
-                else:
-                    return matched.group()
-
-            new_modComm = re.sub(r"(\w+\.)\n(\s*[a-zA-Z])", abbrCheckForName, new_modComm)
-            new_modComm = re.sub(r"([\?\!\:\;])\n(\s*[a-z])", r"\1\2", new_modComm)
-        '''
+        #Special case: ... word
+        new_modComm = re.sub(r"(\s+...)" + r"(" + tag_scanner + r")" + r"\n(\s*[a-z])", r"\1\2\3", new_modComm)
 
         modComm = new_modComm
     if 10 in steps:  # lowercase
