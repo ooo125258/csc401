@@ -17,7 +17,6 @@ pn_abbrs = []
 
 
 def init():
-
     global abbrs
     global clitics
     global stopwords
@@ -46,7 +45,7 @@ def init():
         with open(stopwords_filename) as f:
             for line in f:
                 stopwords.append(line.rstrip('\n'))
-        #stopwords = set(stopwords)
+        # stopwords = set(stopwords)
 
     if len(pn_abbrs) == 0:
         pn_abbrs_filename = "./pn_abbrev.english"
@@ -58,7 +57,7 @@ def init():
                 pn_abbrs.append(add_word)
                 if add_word not in abbrs:
                     abbrs.append(add_word)
-        #pn_abbrs = set(pn_abbrs)
+        # pn_abbrs = set(pn_abbrs)
 
 
 def preproc1(comment, steps=range(1, 11)):
@@ -74,9 +73,12 @@ def preproc1(comment, steps=range(1, 11)):
     comment = "&gt; You mean, besides being one of a handful of states known to be a State sponsor of terrorism?\
      You mean like us in the e.g. United States supporting [Cuban terrorists](http://en.wikipedia.org/wiki/Luis_Posada_Carriles) or [Al-Qaeda](http://en.wikipedia.org/wiki/Al-Qaeda)!?? \
      &gt;I wouldn't go so far as to say the Mr. Guardian Council... and Supreme Leader are rational - and given they are Islamists,?.?the concept of MAD does not apply.\
-     Really? Because they're Islamist they're not rational? That's why I don't like it.\n\nAny more! e.g.... alpha... clitic's dogs'. dogs'  t'challa - y'all "
+     Really? Because they're Islamist they're not rational? That's why I don't like it.\n\nAny more! e.g.... alpha... clitic's dogs'. dogs'  t'challa - y'all 'I don't think it's a good sentence.'"
     modComm = ''
     init()
+    modComm_tags = []
+    modComm_text = []
+    modComm_lemma = []
     if 1 in steps:
         print('Remove all newline characters.')
         modComm = re.sub(r"(\.?)\n+", r" \1 ", comment)
@@ -84,6 +86,7 @@ def preproc1(comment, steps=range(1, 11)):
         # modComm = comment.replace("\n", "")
     if 2 in steps:
         print('Replace HTML character codes with their ASCII equivalent.')
+        modComm = re.sub(r"(\&\w+\;)", r" \1 ", modComm)
         modComm = html.unescape(modComm)
 
     if 3 in steps:
@@ -105,15 +108,16 @@ def preproc1(comment, steps=range(1, 11)):
         So it's the only problem for . and ', besides the second problem
         """
         # Dot here is a problem. The one dot situation will be handled later. For all "..." and "?.?" will be handled
-        # It's rediculous, but ... has higher priority.
-        new_modComm = re.sub(r"\.\.\.(\w|\s|$)", r" ... \1", modComm)
+        # It's ridiculous, but ... has higher priority.
+        new_modComm = re.sub(r"(\.\.\.)(\w|\s|$)", r" \1 \2", modComm)
         new_modComm = re.sub(
             r"(\w|\s\^)(\.\.\.|[\!\#\$\%\&\\\(\)\*\+\,\-\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~\.\']{2,}|[\!\#\$\%\&\\\(\)\*\+\,\-\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~])(\w|\s|$)",
             r"\1 \2 \3", new_modComm)
         # Special operation for brackets
-        new_modComm = re.sub(r"(\s|\^)(\[|\(|\{)", r"\1 \2 ", new_modComm)
-        new_modComm = re.sub(r"(\[|\(|\{)(\s|\$|\.)", r" \1 \2", new_modComm)
-
+        new_modComm = re.sub(r"(\W|\^)([\[\(\{\'\"])", r"\1 \2 ", new_modComm)
+        #quote is a problem. when \w+\', you don't know if it's person's or the player'FLASH' or sth.
+        #But you are sure that if \s\', it must be a quote for reference!
+        new_modComm = re.sub(r"(\]|\)|\})(\W|\$|\.)", r" \1 \2", new_modComm)
         # Handle the dot problem. If find a word followed by dot, then check if it's a word in abbrs list
         def periodHandler(matched):
             lst = abbrs
@@ -146,7 +150,7 @@ def preproc1(comment, steps=range(1, 11)):
         new_modComm = re.sub(r"(^|\s)(\w*\'\w*)($|\s)", citeHandler, modComm)
         modComm = new_modComm
 
-    if 6 in steps: #split clitics
+    if 6 in steps:  # split clitics
         modComm_lst = modComm.strip().split()
         nlp = spacy.load('en', disable=['parser', 'ner'])
         doc = spacy.tokens.Doc(nlp.vocab, words=modComm_lst)
@@ -154,68 +158,95 @@ def preproc1(comment, steps=range(1, 11)):
         new_modComm_lst = []
         for token in doc:
             new_modComm_lst.append(token.text + "/" + token.tag_)
-            # print(token.text, token.lemma_, token.pos_, token.tag_, token.dep_,
-            # token.shape_, token.is_alpha, token.is_stop)        #utt = nlp(modComm)
+            modComm_tags.append(token.tag_)
+            modComm_text.append(token.text)
+            modComm_lemma.append(token.lemma_)  # for later use
+
         modComm = " ".join(new_modComm_lst)
-    if 7 in steps:#Stop words
+
+    if 7 in steps:  # Stop words
         # split to list, remove if in stopwords
-        new_modComm_lst = modComm.split()
-        new_modComm_lst = [x for x in new_modComm_lst if x.split('/')[0] not in stopwords]
+        modComm_lst = modComm.split()
+        if len(modComm_text) > 0:
+            new_modComm_lst = []
+            new_modComm_text = []
+            new_modComm_tags = []
+            new_modComm_lemma = []
+            for idx in range(len(modComm_lst)):  # new_modComm_lst, modComm_text, modComm_tags have the same dimension
+                if modComm_text[idx] not in stopwords:
+                    new_modComm_lst.append(modComm_lst[idx])
+                    new_modComm_text.append(modComm_text[idx])
+                    new_modComm_tags.append(modComm_tags[idx])
+                    new_modComm_lemma.append(modComm_lemma[idx])
+            modComm_text = new_modComm_text
+            modComm_tags = new_modComm_tags  # Save tags for later
+            modComm_lemma = new_modComm_lemma
+        else:
+            new_modComm_lst = [x for x in modComm_lst if x.split('/')[0] not in stopwords]
         modComm = " ".join(new_modComm_lst)
         print('TODO')
-    if 8 in steps:#lemmazation,
-        # How messy it would be! As 6 and 8 are seperated, the process must be executed again!
-        # I need to revert the step 6 to run nlp again!
-        modComm_lst = modComm.strip().split()
-        modComm_text = []
-        modComm_tags = []
-        if len(modComm_lst[0].split('/')) == 2:  # It means the 6 is executed already
-            for i in modComm_lst:
-                word_split = i.split('/')
-                modComm_text.append(word_split[0])
-                modComm_tags.append(word_split[1])
+
+    if 8 in steps:  # lemmazation,
+        # There are different circumstance, if 6 or 7 are executed!!!
+        # 1. if 6 is not executed, then there is no scapy! run scapy to get text and lemma! There are no tags!
+        if 6 not in steps:
+            nlp = spacy.load('en', disable=['parser', 'ner'])
+            doc = spacy.tokens.Doc(nlp.vocab, words=modComm_text)
+            doc = nlp.tagger(doc)
+            new_modComm_lst = []
+            for token in doc:
+                if token.modComm_lemma[0] == '-' and token.text[0] != '-':  ##curcumstance to keep token
+                    new_modComm_lst.append(token.text)
+                elif ord(token.lemma_[0] - 32) == ord(token.text[0]):  # To make sure make -> Make
+                    new_modComm_lst.append(token.text[0] + token.lemma_[1:])  # Now we have word lists lemmaed.
+                else:  # go->went
+                    new_modComm_lst.append(token.lemma_)
+        # 2. if 6 is executed, then the information of previous nlp is already saved!
         else:
-            modComm_text = modComm_lst
-
-        nlp = spacy.load('en', disable=['parser', 'ner'])
-        doc = spacy.tokens.Doc(nlp.vocab, words=modComm_text)
-        doc = nlp.tagger(doc)
-        new_modComm_lst = []
-        for token in doc:
-            if token.lemma_[0] == '-' and token.text[0] != '-':  ##curcumstance to keep token #TODO: why you?
-                new_modComm_lst.append(token.text)
-            else:
-                new_modComm_lst.append(token.text[0] + token.lemma_[1:])
-
-        if len(modComm_tags) > 0:
-            changed_modComm_lst = []
-            for i in range(len(new_modComm_lst)):
-                changed_modComm_lst.append(new_modComm_lst[i] + '/' + modComm_tags[i])
-            modComm = " ".join(changed_modComm_lst)
-        else:
-            modComm = " ".join(new_modComm_lst)
-    if 9 in steps:  #new line between sentences 4.2.4.
-        print('TODO')#Mr./NNP Guardian/NNP Council/NNP .../: \n and/CC Supreme/NNP
-        #
-
-        if len(modComm_lst[0].split('/')) == 2:  # It means the 6 is executed already
-            new_modComm = re.sub(r"([\.\?\!\;\:]\/\S+\s*)", r"\1 \n ", modComm)
-            new_modComm = re.sub(r"\n(\s*[\'\"]\/\S+\s*)", r"\1 \n ", new_modComm)
-            def abbrCheckForName(matched):
-                word = matched.group().strip()
-                word_lst = word.split()
-                if len(word_lst) != 2:
-                    print("Step 9 Error in preprocess: request format: Prof. Rudzicz, actual word: " + word)
-                if word_lst[0].split('/')[0] in pn_abbrs:
-                    return " " + word_lst[0] + " " + word_lst[1]
+            new_modComm_lst = []
+            for i in range(len(modComm_text)):
+                if modComm_lemma[i][0] == '-' and modComm_text[i][0] != '-':  ##curcumstance to keep token
+                    new_modComm_lst.append(modComm_text[i] + "/" + modComm_tags[i])
+                elif ord(modComm_lemma[i][0]) - 32 == ord(modComm_text[i][0]):
+                    new_modComm_lst.append(modComm_text[i][0] + modComm_lemma[i][1:] + "/" + modComm_tags[i])
+                    # Now we have word lists lemmaed.
                 else:
-                    return matched.group()
-            new_modComm = re.sub(r"((\w+\.)+\/\S+\s*)\n(\s*[a-zA-Z])", abbrCheckForName, new_modComm)
-            new_modComm = re.sub(r"([\?\!\:\;]\/\S+\s*)\n(\s*[a-z])", r"\1\2", new_modComm)
-        else:
+                    new_modComm_lst.append(modComm_lemma[i] + "/" + modComm_tags[i])
 
-            new_modComm = re.sub(r"([\.\?\!\;\:])", r"\1 \n", modComm)
-            new_modComm = re.sub(r"\n(\s*[\'\"])", r"\1 \n", new_modComm)
+        modComm = " ".join(new_modComm_lst)
+
+    if 9 in steps:  # new line between sentences 4.2.4.
+        print('TODO')  # Mr./NNP Guardian/NNP Council/NNP .../: \n and/CC Supreme/NNP
+        #
+        tag_scanner = r"\s*" #Handle tag exists or not
+        if len(modComm_lst[0].split('/')) == 2:  # Then there would be tags:
+            tag_scanner = r"\/\S+\s*"
+        #Place putative newline
+        new_modComm = re.sub(r"([\.\?\!\;\:])(" + tag_scanner + r")", r"\1\2 \n ", modComm)
+        #push newline after the following quotes
+        new_modComm = re.sub(r"\n(\s*[\'\"])(" + tag_scanner + r")", r"\1\2 \n ", new_modComm)
+
+        def abbrCheckForName(matched):
+            word = matched.group().strip()
+            word_lst = word.split()
+            if len(word_lst) != 2:
+                print("Step 9 Error in preprocess: request format: Prof. Rudzicz, actual word: " + word)
+            if word_lst[0].split('/')[0] in pn_abbrs:
+                return " " + word_lst[0] + " " + word_lst[1]
+            elif word_lst[1] >=97 and word_lst[1] <= 122:
+                return " " + word_lst[0] + " " + word_lst[1]
+            else:
+                return matched.group()
+        #known abbr + . + Name/noneCapital?
+        #Yes, I am speaking to you two: e.g. and i.e.
+        new_modComm = re.sub(r"((\w+\.)+)" + r"(" + tag_scanner + r")" + r"\n(\s*\S)", abbrCheckForName, new_modComm)
+        #Disqualify newline with ?! when following lowercase
+        new_modComm = re.sub(r"([\?\!\:\;])" + r"(" + tag_scanner + r")" + r"\n(\s*^[A-Z])", r"\1\2\3", new_modComm)
+        '''
+                else:
+
+            new_modComm = re.sub(r"([\.\?\!\;\:]\s*)", r"\1 \n", modComm)
+            new_modComm = re.sub(r"\n(\s*[\'\"]\s*)", r"\1 \n", new_modComm)
 
             def abbrCheckForName(matched):
                 word = matched.group().strip()
@@ -229,8 +260,10 @@ def preproc1(comment, steps=range(1, 11)):
 
             new_modComm = re.sub(r"(\w+\.)\n(\s*[a-zA-Z])", abbrCheckForName, new_modComm)
             new_modComm = re.sub(r"([\?\!\:\;])\n(\s*[a-z])", r"\1\2", new_modComm)
+        '''
+
         modComm = new_modComm
-    if 10 in steps:#lowercase
+    if 10 in steps:  # lowercase
         modComm = modComm.lower()
 
     return modComm
