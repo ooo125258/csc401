@@ -147,12 +147,17 @@ def main( args ):
 
     data = json.load(open(args.input))
     feats = np.zeros( (len(data), 173+1))
-
+    '''
     # TODO: your code here
     for i in range(len(data)):
         if (i % 100 == 0):
             print("complete: "+ str(i/float(len(data))*100) + "%")
         feats[i] = extract1(data[i]["body"])
+        
+        #It could be better ways, as the number is fixed.
+        #But I haven't prove it.
+        itemindex = numpy.where(data[i)
+        
         if (data[i]["cat"] == "Alt"):
             feats[i][-1] = 3
         elif (data[i]["cat"] == "Center"):
@@ -161,6 +166,11 @@ def main( args ):
             feats[i][-1] = 0
         elif (data[i]["cat"] == "Right"):
             feats[i][-1] = 2
+    '''
+
+    alt_feats = np.load("/u/cs401/A1/feats/Alt_feats.dat.npy")
+    alt_IDs = np.loadtxt("/u/cs401/A1/feats/Alt_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+    llwc_feats = np.loadtxt("/u/cs401/A1/feats/feats.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
     np.savez_compressed( args.output, feats)
 
 
