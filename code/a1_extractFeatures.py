@@ -3,7 +3,10 @@ import sys
 import argparse
 import os
 import json
+from collections import defaultdict
+from numpy import loadtxt
 
+def init():
 
 def extract1( comment ):
     ''' This function extracts features from a single comment
@@ -16,6 +19,22 @@ def extract1( comment ):
     '''
     print('TODO')
     # TODO: your code here
+    PRP_1st = loadtxt("/u/cs401/Wordlists/First-person", comments="#", delimiter="\n", unpack=False)
+    PRP_1st = loadtxt("/u/cs401/Wordlists/Second-person", comments="#", delimiter="\n", unpack=False)
+    PRP_1st = loadtxt("/u/cs401/Wordlists/Third-person", comments="#", delimiter="\n", unpack=False)
+    #Now, start to check the words
+    sentences = comment.split("\n")
+
+    numbers = {}
+    for sentence in sentences:
+        #to avoid some silly empty string.
+        if sentence == "" or sentence is None:
+            continue
+
+        words = sentence.split()
+        # 1, first person pronoun
+        for i in range(len(words)):
+
 
 def main( args ):
 

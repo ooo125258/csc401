@@ -14,14 +14,16 @@ abbrs = []
 clitics = []
 stopwords = []
 pn_abbrs = []
-
+nlp = spacy.load('en', disable=['parser', 'ner'])
 
 def init():
     global abbrs
     global clitics
     global stopwords
     global pn_abbrs
+    global nlp
 
+    nlp = spacy.load('en', disable=['parser', 'ner'])
     if len(abbrs) == 0:
         abbr_filename = "./abbrev.english"
         if not os.path.isfile(abbr_filename):
@@ -79,18 +81,26 @@ def preproc1(comment, steps=range(1, 11)):
     modComm_tags = []
     modComm_text = []
     modComm_lemma = []
+    global nlp
+
     if 1 in steps:
-        print('Remove all newline characters.')
+        if comment == "":
+            return ""
+        #print('Remove all newline characters.')
         modComm = re.sub(r"(\.?)\n+", r" \1 ", comment)
         # modComm = comment.replace("\.\n", " \.")
         # modComm = comment.replace("\n", "")
     if 2 in steps:
-        print('Replace HTML character codes with their ASCII equivalent.')
+        if modComm == "":
+            return ""
+        #print('Replace HTML character codes with their ASCII equivalent.')
         modComm = re.sub(r"(\&\w+\;)", r" \1 ", modComm)
         modComm = html.unescape(modComm)
 
     if 3 in steps:
-        print('Remove all URLs http/www/https')
+        if modComm == "":
+            return ""
+        #print('Remove all URLs http/www/https')
         modComm = re.sub(r"[\(\[\{]?http[s]?://[A-Za-z0-9\/\_\.\!\#\$\%\&\\\'\*\+\,\-\:\;\=\?\@\^\|\.]+[\)\]\}]?", '',
                          modComm)
         modComm = re.sub(r"[\(\[\{]?www\.[A-Za-z0-9\/\_\.\!\#\$\%\&\\\'\*\+\,\-\:\;\=\?\@\^\|]+[\)\]\}]?", '', modComm)
@@ -107,6 +117,8 @@ def preproc1(comment, steps=range(1, 11)):
         
         So it's the only problem for . and ', besides the second problem
         """
+        if modComm == "":
+            return ""
         # Dot here is a problem. The one dot situation will be handled later. For all "..." and "?.?" will be handled
         # It's ridiculous, but ... has higher priority.
         new_modComm = re.sub(r"(\.\.\.)(\w|\s|$)", r" \1 \2", modComm)
@@ -136,6 +148,8 @@ def preproc1(comment, steps=range(1, 11)):
         modComm = new_modComm.replace("'.", "' .")
 
     if 5 in steps:
+        if modComm == "":
+            return ""
         def citeHandler(matched):
             lst = clitics
             sth_matched = str(matched.group())
@@ -151,8 +165,12 @@ def preproc1(comment, steps=range(1, 11)):
         modComm = new_modComm
 
     if 6 in steps:  # split clitics
+        if modComm == "":
+            return ""
         modComm_lst = modComm.strip().split()
-        nlp = spacy.load('en', disable=['parser', 'ner'])
+        if nlp is None:
+            print("warning: trying to load spacy in a wrong place. It would be much slower if it happens a lot of time!")
+            nlp = spacy.load('en', disable=['parser', 'ner'])
         doc = spacy.tokens.Doc(nlp.vocab, words=modComm_lst)
         doc = nlp.tagger(doc)
         new_modComm_lst = []
@@ -166,6 +184,8 @@ def preproc1(comment, steps=range(1, 11)):
 
     if 7 in steps:  # Stop words
         # split to list, remove if in stopwords
+        if modComm == "":
+            return ""
         modComm_lst = modComm.split()
         if len(modComm_text) > 0:
             new_modComm_lst = []
@@ -184,13 +204,17 @@ def preproc1(comment, steps=range(1, 11)):
         else:
             new_modComm_lst = [x for x in modComm_lst if x.split('/')[0] not in stopwords]
         modComm = " ".join(new_modComm_lst)
-        print('TODO')
+        #print('TODO')
 
     if 8 in steps:  # lemmazation,
         # There are different circumstance, if 6 or 7 are executed!!!
         # 1. if 6 is not executed, then there is no scapy! run scapy to get text and lemma! There are no tags!
+        if modComm == "":
+            return ""
         if 6 not in steps:
-            nlp = spacy.load('en', disable=['parser', 'ner'])
+            if nlp is None:
+                print("warning: trying to load spacy in a wrong place. It would be much slower if it happens a lot of time!")
+                nlp = spacy.load('en', disable=['parser', 'ner'])
             doc = spacy.tokens.Doc(nlp.vocab, words=modComm_text)
             doc = nlp.tagger(doc)
             new_modComm_lst = []
@@ -216,9 +240,13 @@ def preproc1(comment, steps=range(1, 11)):
         modComm = " ".join(new_modComm_lst)
 
     if 9 in steps:  # new line between sentences 4.2.4.
-        print('TODO')  # Mr./NNP Guardian/NNP Council/NNP .../: \n and/CC Supreme/NNP
+        #print('TODO')  # Mr./NNP Guardian/NNP Council/NNP .../: \n and/CC Supreme/NNP
         #
+        if modComm == "":
+            return ""
         tag_scanner = r"\s*" #Handle tag exists or not
+        if len(modComm_lst) == 0:
+            print("ERROR here!")
         if len(modComm_lst[0].split('/')) == 2:  # Then there would be tags:
             tag_scanner = r"\/\S+\s*"
         #Place putative newline
@@ -233,7 +261,7 @@ def preproc1(comment, steps=range(1, 11)):
                 print("Step 9 Error in preprocess: request format: Prof. Rudzicz, actual word: " + word)
             if word_lst[0].split('/')[0] in pn_abbrs:
                 return " " + word_lst[0] + " " + word_lst[1]
-            elif word_lst[1] >=97 and word_lst[1] <= 122:
+            elif ord(word_lst[1]) >=97 and ord(word_lst[1]) <= 122:
                 return " " + word_lst[0] + " " + word_lst[1]
             else:
                 return matched.group()
@@ -247,6 +275,8 @@ def preproc1(comment, steps=range(1, 11)):
 
         modComm = new_modComm
     if 10 in steps:  # lowercase
+        if modComm == "":
+            return ""
         modComm = modComm.lower()
 
     return modComm
@@ -255,9 +285,9 @@ def preproc1(comment, steps=range(1, 11)):
 def main(args):
     allOutput = []
     for subdir, dirs, files in os.walk(indir):
-        for file in files:
-            fullFile = os.path.join(subdir, file)
-            print("Processing " + fullFile)
+        for fl in files:
+            fullFile = os.path.join(subdir, fl)
+            #print("Processing " + fullFile)
 
             data = json.load(open(fullFile))
 
@@ -270,11 +300,15 @@ def main(args):
             # TODO: choose to retain fields from those lines that are relevant to you
             # TODO: add a field to each selected line called 'cat' with the value of 'file' (e.g., 'Alt', 'Right', ...)
             retained_mydata = []
+            counter = 0
             for line in mydata:
+                counter = counter + 1
+                if counter % 100 == 0:
+                    print("file {} counter {}".format(fl, counter))
                 j = json.loads(line)
                 newline = {}
                 newline['id'] = j['id']
-                newline['cat'] = file
+                newline['cat'] = fl
 
                 # TODO: process the body field (j['body']) with preproc1(...) using default for `steps` argument
                 # TODO: replace the 'body' field with the processed text
