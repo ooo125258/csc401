@@ -5,6 +5,7 @@ import os
 import json
 from collections import defaultdict
 from numpy import loadtxt
+import re
 
 def wordTagSplit(token):
     format = re.match(r'^(.*)\/(\w+)$', token, re.I)
@@ -17,8 +18,9 @@ def wordTagSplit(token):
         
 def helper_8(token):
     format = re.match(r'^(.*)\/(\w+)$', token, re.I)
-        
+
 def extract1( comment ):
+    comment = " I/PRON You/PRON His/PRON and/CC did/VBD will/FUT going/ING to/CC ,/COMMA ,??/PUNCT noun/NN noun/NNS very/RB why/WP lmao/SL"
     #TODO:how do you deal with ?!?
     #TODO: if only one char, it's really possible to get error!
     #TODO: handle xx
@@ -99,7 +101,7 @@ def extract1( comment ):
             #10, proper nouns
             elif tag in ["NNP", "NNPS"]:
                 numbers[10] += 1
-            #11, adberbs
+            #11, adverbs
             elif tag in ["RB", "RBR", "RBS", "RP"]:
                 numbers[11] += 1
             #12, wh- words

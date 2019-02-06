@@ -87,7 +87,7 @@ def preproc1(comment, steps=range(1, 11)):
         if comment == "":
             return ""
         #print('Remove all newline characters.')
-        modComm = re.sub(r"(\.?)\n+", r" \1 ", comment)
+        modComm = re.sub(r"(\.?)(\r?\n)+", r" \1 ", comment)
         # modComm = comment.replace("\.\n", " \.")
         # modComm = comment.replace("\n", "")
     if 2 in steps:
@@ -101,10 +101,9 @@ def preproc1(comment, steps=range(1, 11)):
         if modComm == "":
             return ""
         #print('Remove all URLs http/www/https')
-        modComm = re.sub(r"[\(\[\{]?http[s]?://[A-Za-z0-9\/\_\.\!\#\$\%\&\\\'\*\+\,\-\:\;\=\?\@\^\|\.]+[\)\]\}]?", '',
-                         modComm)
-        modComm = re.sub(r"[\(\[\{]?www\.[A-Za-z0-9\/\_\.\!\#\$\%\&\\\'\*\+\,\-\:\;\=\?\@\^\|]+[\)\]\}]?", '', modComm)
-
+        #http://www.noah.org/wiki/RegEx_Python#URL_regex_pattern
+        modComm = re.sub(r'[\(\[\{](?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+[\)\]\}]?', '', modComm)
+            
     if 4 in steps:
         # skip abbr, or others
 
