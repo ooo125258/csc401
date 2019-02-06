@@ -6,6 +6,7 @@ import json
 from collections import defaultdict
 from numpy import loadtxt
 import re
+import string
 
 def wordTagSplit(token):
     format = re.match(r'^(.*)\/(\w+)$', token, re.I)
@@ -51,7 +52,7 @@ def extract1( comment ):
         tokens = sentence.split()
 
         for i in range(len(tokens)):
-            if tokens[i] = "":
+            if tokens[i] == "":
                 continue
             #The word should be word/tag format
             ret = wordTagSplit(tokens[i])
