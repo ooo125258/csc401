@@ -147,7 +147,7 @@ def main( args ):
 
     data = json.load(open(args.input))
     feats = np.zeros( (len(data), 173+1))
-    '''
+    
     # TODO: your code here
     for i in range(len(data)):
         if (i % 100 == 0):
@@ -156,21 +156,41 @@ def main( args ):
         
         #It could be better ways, as the number is fixed.
         #But I haven't prove it.
-        itemindex = numpy.where(data[i)
+
         
+        alt_feats = np.load("/u/cs401/A1/feats/Alt_feats.dat.npy")
+        alt_IDs = np.loadtxt("/u/cs401/A1/feats/Alt_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+        llwc_feats = np.loadtxt("/u/cs401/A1/feats/feats.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+        left_feats = np.load("/u/cs401/A1/feats/Left_feats.dat.npy")
+        left_IDs = np.loadtxt("/u/cs401/A1/feats/Left_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+        right_feats = np.load("/u/cs401/A1/feats/Right_feats.dat.npy")
+        right_IDs = np.loadtxt("/u/cs401/A1/feats/Right_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+        center_feats = np.load("/u/cs401/A1/feats/Center_feats.dat.npy")
+        center_IDs = np.loadtxt("/u/cs401/A1/feats/Center_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+
         if (data[i]["cat"] == "Alt"):
             feats[i][-1] = 3
+            itemindex, = np.where(alt_IDs == data[i]["id"])
+            thisFeat = alt_feats[itemindex]
+            feats[i][30:174] = thisFeat
         elif (data[i]["cat"] == "Center"):
+            itemindex, = np.where(center_IDs == data[i]["id"])
+            thisFeat = center_feats[itemindex]
+            feats[i][30:174] = thisFeat
             feats[i][-1] = 1
         elif (data[i]["cat"] == "Left"):
+            itemindex, = np.where(left_IDs == data[i]["id"])
+            thisFeat = left_feats[itemindex]
+            feats[i][30:174] = thisFeat
             feats[i][-1] = 0
         elif (data[i]["cat"] == "Right"):
+            itemindex, = np.where(right_IDs == data[i]["id"])
+            thisFeat = right_feats[itemindex]
+            feats[i][30:174] = thisFeat
             feats[i][-1] = 2
-    '''
+    
 
-    alt_feats = np.load("/u/cs401/A1/feats/Alt_feats.dat.npy")
-    alt_IDs = np.loadtxt("/u/cs401/A1/feats/Alt_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
-    llwc_feats = np.loadtxt("/u/cs401/A1/feats/feats.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+    
     np.savez_compressed( args.output, feats)
 
 
