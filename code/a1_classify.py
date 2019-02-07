@@ -77,7 +77,7 @@ def class31(filename):
     compare_values = np.zeros((5,26))
     compare_values[:,0] = [1,2,3,4,5]
     return (X_train, X_test, y_train, y_test, 1)
-
+    '''
     #1 linearSVC
     print("linearSVC")
     lsvc_clf = helperSelectClassifier(1)
@@ -121,7 +121,7 @@ def class31(filename):
     compare_values[3][2:6] = recall(C4)
     compare_values[3][6:10] = precision(C4)
     compare_values[3][10:] = C4.reshape(16,)
-
+    '''
     #5 AdaBoost
     print("AB")
     ab_clf = helperSelectClassifier(5)
@@ -193,7 +193,9 @@ def class32(X_train, X_test, y_train, y_test,iBest):
 
     return (X_1k, y_1k)
 
-def class33(X_train, X_test, y_train, y_test, i, X_1k, y_1k):
+def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
+    #TODO: Features [ 3  4  8  9 10 11 13 29] are constant.
+    #RuntimeWarning: invalid value encountered in true_divide f = msb / msw
     ''' This function performs experiment 3.3
 
     Parameters:
@@ -201,35 +203,42 @@ def class33(X_train, X_test, y_train, y_test, i, X_1k, y_1k):
        X_test: NumPy array, with the selected testing features
        y_train: NumPy array, with the selected training classes
        y_test: NumPy array, with the selected testing classes
-       i: int, the index of the supposed best classifier (from task 3.1)
+       iBest: int, the index of the supposed best classifier (from task 3.1)
        X_1k: numPy array, just 1K rows of X_train (from task 3.2)
        y_1k: numPy array, just 1K rows of y_train (from task 3.2)
     '''
     #First part
     ks = [5]#,10, 20, 30, 40, 50]
     print('TODO Section 3.3')
-    ret = np.zeros(len(ks) + 1, 2)
+    ret = np.zeros((len(ks) + 1, 2))
+    csvfile = open("a1_3.3.csv", "w")
+    a133writer = csv.writer(csvfile, delimiter=',')
     for i in range(len(ks)):
+        writeLine = []
         selector = SelectKBest(f_classif, ks[i])
         X_new = selector.fit_transform(X_train, y_train)
         pp = selector.pvalues_
-        ret[i] = [ks[i], pp]
+        writeLine.append(ks[i])
+        writeLine.append(np.argpartition(pp, ks[i]))
+        a133writer.writerow(writeLine)
 
     #Second part:
     k = 5
+    writeLine = []
     clf = helperSelectClassifier(iBest)
     clf.fit(X_1k, y_1k)
     y_pred_1k = clf.predict(X_test)
     C_1k = confusion_matrix(y_test, y_pred_1k)
-    ret[6,0] = accuracy(C_1k)
+    writeLine.append(accuracy(C_1k))
 
     clf = helperSelectClassifier(iBest)
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
     C = confusion_matrix(y_test, y_pred)
-    ret[6,1] = accuracy(C)
+    writeLine.append(accuracy(C))
+    a133writer.writerow(writeLine)
 
-    np.savetxt("a1_3.3.csv", ret, delimiter=",")
+    csvfile.close()
     #TODO: Third part, written result.
 
 
