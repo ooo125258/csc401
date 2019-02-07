@@ -197,6 +197,7 @@ def class34( filename, i ):
     print('TODO Section 3.4')
     
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Nothing. Part3')
     parser.add_argument("-i", "--input", help="the input npz file from Task 2", required=True)
     args = parser.parse_args()
 
