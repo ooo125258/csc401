@@ -167,9 +167,9 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     csvfile = open("a1_3.3.csv", "w")
     a133writer = csv.writer(csvfile, delimiter=',')
     #1k training set, save the index of features
-    onekFeatsIdx = np.zeros((len(ks), np.max(ks)))
+    onekFeatsIdx = np.zeros((len(ks), np.max(ks)), dtype=int)
     #32k training set, save the index of features
-    orikFeatsIdx = np.zeros((len(ks), np.max(ks)))
+    orikFeatsIdx = np.zeros((len(ks), np.max(ks)), dtype=int)
     #1k training set, save the pp of features
     onekFeatsPP = np.zeros((len(ks), np.max(ks)))
     #32k training set, save the pp of features
@@ -182,8 +182,8 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
         X_new_1k = selector_1k.fit_transform(X_1k, y_1k)
         pp_1k = selector_1k.pvalues_
         index_1k = selector_1k.get_support(indices=True)
-        onekFeatsIdx[i,:len(index_1k)] = index_1k
-        onekFeatsPP[i,:len(index_1k)] = pp_1k[index_1k]
+        onekFeatsIdx[i,:ks[i]] = index_1k
+        onekFeatsPP[i,:ks[i]] = pp_1k[index_1k]
         
         #32k training set
         writeLine = []
@@ -191,8 +191,8 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
         X_new_32k = selector_32k.fit_transform(X_train, y_train)
         pp_32k = selector_32k.pvalues_
         index_32k = selector_32k.get_support(indices=True)
-        orikFeatsIdx[i,:len(index_32k)] = index_32k
-        orikFeatsPP[i,:len(index_32k)] = pp_32k[index_32k]
+        orikFeatsIdx[i,:ks[i]] = index_32k
+        orikFeatsPP[i,:ks[i]] = pp_32k[index_32k]
         #PP is calculated write to csv,
 
         writeLine.append(ks[i])
@@ -227,6 +227,7 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
 
 
 def class34( filename, i ):
+    #We know it's 174 features
     ''' This function performs experiment 3.4
 
     Parameters
@@ -240,7 +241,7 @@ def class34( filename, i ):
     accu5 = []
     accu = np.zeros((5,5))
     counter = 0
-    for train_index, test_index in kf.split():
+    for train_index, test_index in kf.split(X):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
