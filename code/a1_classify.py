@@ -203,19 +203,19 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     k = 5
     writeLine = []
     reduced_X_1k = X_1k[:,onekFeatsIdx[0,:5]]
-    reduced_X_test = X_test[:,onekFeatsIdx[0,:5]]
+    reduced_X_test_1k = X_test[:,onekFeatsIdx[0,:5]]
     clf = helperSelectClassifier(iBest)
     clf.fit(reduced_X_1k, y_1k)
-    y_pred_1k = clf.predict(reduced_X_test)
+    y_pred_1k = clf.predict(reduced_X_test_1k)
     C_1k = confusion_matrix(y_test, y_pred_1k)
     writeLine.append(accuracy(C_1k))
 
     #32k training set
-    reduced_X_1k = X_1k[:,orikFeatsIdx[0,:5]]
-    reduced_X_test = X_test[:,orikFeatsIdx[0,:5]]
+    reduced_X_32k = X_train[:,orikFeatsIdx[0,:5]]
+    reduced_X_test_32k = X_test[:,orikFeatsIdx[0,:5]]
     clf = helperSelectClassifier(iBest)
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
+    clf.fit(reduced_X_32k, y_train)
+    y_pred = clf.predict(reduced_X_test_32k)
     C = confusion_matrix(y_test, y_pred)
     writeLine.append(accuracy(C))
     a133writer.writerow(writeLine)
