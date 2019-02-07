@@ -102,7 +102,7 @@ def preproc1(comment, steps=range(1, 11)):
             return ""
         #print('Remove all URLs http/www/https')
         #http://www.noah.org/wiki/RegEx_Python#URL_regex_pattern
-        modComm = re.sub(r'[\(\[\{](?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+[\)\]\}]?', '', modComm)
+        #modComm = re.sub(r'[\(\[\{](?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+[\)\]\}]?', '', modComm)
             
     if 4 in steps:
         # skip abbr, or others
