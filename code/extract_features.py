@@ -148,21 +148,25 @@ def main( args ):
     data = json.load(open(args.input))
     feats = np.zeros( (len(data), 173+1))
     
-    
+    print("start")
     # TODO: your code here
     alt_feats = np.load("/u/cs401/A1/feats/Alt_feats.dat.npy")
     alt_IDs = np.loadtxt("/u/cs401/A1/feats/Alt_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+    print("doing 2")
     llwc_feats = np.loadtxt("/u/cs401/A1/feats/feats.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
     left_feats = np.load("/u/cs401/A1/feats/Left_feats.dat.npy")
+    print("doing 3")
     left_IDs = np.loadtxt("/u/cs401/A1/feats/Left_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
     right_feats = np.load("/u/cs401/A1/feats/Right_feats.dat.npy")
     right_IDs = np.loadtxt("/u/cs401/A1/feats/Right_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+    print("doing 4")
     center_feats = np.load("/u/cs401/A1/feats/Center_feats.dat.npy")
     center_IDs = np.loadtxt("/u/cs401/A1/feats/Center_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
-
-    for i in range(len(data)):
-        if (i % 100 == 0):
-            print("complete: "+ str(i/float(len(data))*100) + "%")
+    print("doing 5")
+    from tqdm import tqdm
+    for i in tqdm(range(len(data))):
+        # if (i % 100 == 0):
+        #     print("complete: "+ str(i/float(len(data))*100) + "%")
         feats[i] = extract1(data[i]["body"])
         
         #It could be better ways, as the number is fixed.
