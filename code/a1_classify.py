@@ -36,17 +36,13 @@ def helperSelectClassifier(iBest):
 
 def accuracy( C ):
     ''' Compute accuracy given Numpy array confusion matrix C. Returns a floating point value '''
-    return np.trace(C) / np.sum(C)
+    deno = np.sum(C)
+    return 0.0 if deno == 0 else np.trace(C) / deno
     #print ('TODO')
 
 def recall( C ):
     ''' Compute recall given Numpy array confusion matrix C. Returns a list of floating point values '''
-    ret = []
-    for k in range(C.shape[0]):
-        deno = np.sum(C[k])
-        ret.append(C[k,k] / deno)
-    return ret
-
+    return [C[k,k] / np.sum(C[k]) for k in range(C.shape[0])]
     #print ('TODO')
 
 def precision( C ):
@@ -77,61 +73,17 @@ def class31(filename):
     compare_values = np.zeros((5,26))
     compare_values[:,0] = [1,2,3,4,5]
     return (X_train, X_test, y_train, y_test, 1)
-    '''
-    #1 linearSVC
-    print("linearSVC")
-    lsvc_clf = helperSelectClassifier(1)
-    lsvc_clf.fit(X_train, y_train)
-    y_pred_1 = lsvc_clf.predict(X_test)
-    C1 = confusion_matrix(y_test, y_pred_1, labels = [0,1,2,3])
-    compare_values[0][1] = accuracy(C1)
-    compare_values[0][2:6] = recall(C1)
-    compare_values[0][6:10] = precision(C1)
-    compare_values[0][10:] = C1.reshape(16,)
-
-    #2 SVC
-    print("SVC")
-    svc_clf = helperSelectClassifier(2)
-    svc_clf.fit(X_train, y_train)
-    y_pred_2 = svc_clf.predict(X_test)
-    C2 = confusion_matrix(y_test, y_pred_2, labels = [0,1,2,3])
-    compare_values[1][1] = accuracy(C2)
-    compare_values[1][2:6] = recall(C2)
-    compare_values[1][6:10] = precision(C2)
-    compare_values[1][10:] = C2.reshape(16,)
-
-    #3 RFC
-    print("RF")
-    rfc_clf = helperSelectClassifier(3)
-    rfc_clf.fit(X_train, y_train)
-    y_pred_3 = rfc_clf.predict(X_test)
-    C3 = confusion_matrix(y_test, y_pred_3, labels = [0,1,2,3])
-    compare_values[2][1] = accuracy(C3)
-    compare_values[2][2:6] = recall(C3)
-    compare_values[2][6:10] = precision(C3)
-    compare_values[2][10:] = C3.reshape(16,)
-
-    #4 MLP
-    print("MLP")
-    mlp_clf = helperSelectClassifier(4)
-    mlp_clf.fit(X_train, y_train)
-    y_pred_4 = mlp_clf.predict(X_test)
-    C4 = confusion_matrix(y_test, y_pred_4, labels = [0,1,2,3])
-    compare_values[3][1] = accuracy(C4)
-    compare_values[3][2:6] = recall(C4)
-    compare_values[3][6:10] = precision(C4)
-    compare_values[3][10:] = C4.reshape(16,)
-    '''
-    #5 AdaBoost
-    print("AB")
-    ab_clf = helperSelectClassifier(5)
-    ab_clf.fit(X_train, y_train)
-    y_pred_5 = ab_clf.predict(X_test)
-    C5 = confusion_matrix(y_test, y_pred_5, labels = [0,1,2,3])
-    compare_values[4][1] = accuracy(C5)
-    compare_values[4][2:6] = recall(C5)
-    compare_values[4][6:10] = precision(C5)
-    compare_values[4][10:] = C5.reshape(16,)
+    
+    for i in range(5):
+        print("linearSVC")
+        clf = helperSelectClassifier(i + 1)
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
+        C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
+        compare_values[i][1] = accuracy(C)
+        compare_values[i][2:6] = recall(C)
+        compare_values[i][6:10] = precision(C)
+        compare_values[i][10:] = C1.reshape(16,)
 
     #Go, iBest!
     iBest = np.argmax(compare_values[:,1]) + 1
@@ -145,7 +97,7 @@ def class31(filename):
 
     #Backup values for later use
     np.savez('a31retvalues.npz', name1=X_train, name2=X_test, name3=y_train, name4=y_test, name5=iBest)
-    return (X_train, X_test, y_train, y_test, iBest)
+    return X_train, X_test, y_train, y_test, iBest
 
 
 def class32(X_train, X_test, y_train, y_test,iBest):
@@ -191,11 +143,12 @@ def class32(X_train, X_test, y_train, y_test,iBest):
         a132writer.writerow(compare_values)
 
 
-    return (X_1k, y_1k)
+    return X_1k, y_1k
 
 def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     #TODO: Features [ 3  4  8  9 10 11 13 29] are constant.
     #RuntimeWarning: invalid value encountered in true_divide f = msb / msw
+    #TODO: Do we need to SelectKBest from 1k set?
     ''' This function performs experiment 3.3
 
     Parameters:
@@ -213,24 +166,53 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     ret = np.zeros((len(ks) + 1, 2))
     csvfile = open("a1_3.3.csv", "w")
     a133writer = csv.writer(csvfile, delimiter=',')
+    #1k training set, save the index of features
+    onekFeatsIdx = np.zeros((len(ks), np.max(ks)))
+    #32k training set, save the index of features
+    orikFeatsIdx = np.zeros((len(ks), np.max(ks)))
+    #1k training set, save the pp of features
+    onekFeatsPP = np.zeros((len(ks), np.max(ks)))
+    #32k training set, save the pp of features
+    orikFeatsPP = np.zeros((len(ks), np.max(ks)))
+
     for i in range(len(ks)):
+        #code on doc
+        #First, we have the 1k training set.
+        selector_1k = SelectKBest(f_classif, k=ks[i])
+        X_new_1k = selector_1k.fit_transform(X_1k, y_1k)
+        pp_1k = selector_1k.pvalues_
+        index_1k = selector_1k.get_support(indices=True)
+        onekFeatsIdx[i,:len(index_1k)] = index_1k
+        onekFeatsPP[i,:len(index_1k)] = pp_1k[index_1k]
+        
+        #32k training set
         writeLine = []
-        selector = SelectKBest(f_classif, ks[i])
-        X_new = selector.fit_transform(X_train, y_train)
-        pp = selector.pvalues_
+        selector_32k = SelectKBest(f_classif, k=ks[i])
+        X_new_32k = selector_32k.fit_transform(X_train, y_train)
+        pp_32k = selector_32k.pvalues_
+        index_32k = selector_32k.get_support(indices=True)
+        orikFeatsIdx[i,:len(index_32k)] = index_32k
+        orikFeatsPP[i,:len(index_32k)] = pp_32k[index_32k]
+        #PP is calculated write to csv,
+
         writeLine.append(ks[i])
-        writeLine.append(np.argpartition(pp, ks[i]))
+        writeLine.append(pp_32k[index_32k])
         a133writer.writerow(writeLine)
 
     #Second part:
     k = 5
     writeLine = []
+    reduced_X_1k = X_1k[:,onekFeatsIdx[0,:5]]
+    reduced_X_test = X_test[:,onekFeatsIdx[0,:5]]
     clf = helperSelectClassifier(iBest)
-    clf.fit(X_1k, y_1k)
-    y_pred_1k = clf.predict(X_test)
+    clf.fit(reduced_X_1k, y_1k)
+    y_pred_1k = clf.predict(reduced_X_test)
     C_1k = confusion_matrix(y_test, y_pred_1k)
     writeLine.append(accuracy(C_1k))
 
+    #32k training set
+    reduced_X_1k = X_1k[:,orikFeatsIdx[0,:5]]
+    reduced_X_test = X_test[:,orikFeatsIdx[0,:5]]
     clf = helperSelectClassifier(iBest)
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
