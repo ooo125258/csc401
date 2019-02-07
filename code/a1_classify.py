@@ -43,11 +43,13 @@ def class31(filename):
        i: int, the index of the supposed best classifier
     '''
     print('TODO Section 3.1')
-    feats = np.load(filename)#To easier to debug, random_state=0. change later
+    feats = np.load(filename)['arr_0']#To easier to debug, random_state=0. change later
     X_train, X_test, y_train, y_test = train_test_split(feats[:,:173], feats[:,173], test_size = 0.2, random_state=0)
-
+    #Need int value for classifier
+    y_train = y_train.astype("int")
+    y_test = y_test.astype("int")
     compare_values = np.zeros((5,26))
-    compare_values[:0] = [1,2,3,4,5]
+    compare_values[:,0] = [1,2,3,4,5]
 
     #1 linearSVC
     lsvc_clf = LinearSVC(random_state=0, loss="hinge")
