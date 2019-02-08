@@ -110,8 +110,8 @@ def preproc1(comment, steps=range(1, 11)):
         if modComm == "":
             return ""
         #print('Remove all URLs http/www/https')
-        #http://www.noah.org/wiki/RegEx_Python#URL_regex_pattern
-        modComm = re.sub(r'[\(\[\{](?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+[\)\]\}]?', '', modComm)
+        #modified from : https://daringfireball.net/2010/07/improved_regex_for_matching_urls
+        modComm = re.sub(r"((\s|^)[\(\[\{]*(?:https?:\/\/|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'\".,<>?«»“”‘’])(\s|$))", '', modComm)
             
     if 4 in steps:#TODO: modify if still slow. remember the capital abbr words
         # skip abbr, or others
