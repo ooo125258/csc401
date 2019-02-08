@@ -179,7 +179,7 @@ def preproc1(comment, steps=range(1, 11)):
         if nlp is None:
             print("warning: trying to load spacy in a wrong place. It would be much slower if it happens a lot of time!")
             nlp = spacy.load('en', disable=['parser', 'ner'])
-        doc = spacy.tokens.Doc(nlp.vocab, words=modComm_lst)
+        doc = spacy.tokens.Doc(nlp.vocab, words=modComm.split())
         doc = nlp.tagger(doc)
         new_modComm_lst = []
         for token in doc:
@@ -195,7 +195,6 @@ def preproc1(comment, steps=range(1, 11)):
             return ""
         reStr = r"\b(" + r"(\s|^)" + r"|".join(stopwords) + r"\/\-?\S+\-?" + r"(\s|$)" + r")\b"
         modcComm = re.sub(reStr, " ", modComm, flags=re.IGNORECASE)
-        new_modComm_lemma.append(modComm_lemma[idx])
         
         '''
         modComm_lst = modComm.split()
