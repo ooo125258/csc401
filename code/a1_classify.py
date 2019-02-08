@@ -270,7 +270,7 @@ def class34( filename, i ):
             S = stats.ttest_rel(a,b)
             p_values[input_idx] = S
             input_idx += 1
-    a124writer.writerow(p_values)
+    a134writer.writerow(p_values)
     csvfile.close()
     
 
@@ -286,4 +286,5 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test, iBest = class31(args.input)
     X_1k, y_1k = class32(X_train, X_test, y_train, y_test, iBest)
     class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k)
+    class34(args.input, iBest)
     print("Classifier done.")
