@@ -68,8 +68,8 @@ def class31(filename):
     feats = np.load(filename)['arr_0']#To easier to debug, random_state=0. change later
     X_train, X_test, y_train, y_test = train_test_split(feats[:,:173], feats[:,173], test_size = 0.2, random_state=0)
     #Need int value for classifier
-    y_train = y_train.astype("int")
-    y_test = y_test.astype("int")
+    y_train = y_train.astype(int)
+    y_test = y_test.astype(int)
     compare_values = np.zeros((5,26))
     compare_values[:,0] = [1,2,3,4,5]
     return (X_train, X_test, y_train, y_test, 1)
@@ -83,7 +83,7 @@ def class31(filename):
         compare_values[i][1] = accuracy(C)
         compare_values[i][2:6] = recall(C)
         compare_values[i][6:10] = precision(C)
-        compare_values[i][10:] = C1.reshape(16,)
+        compare_values[i][10:] = C.reshape(16,)
 
     #Go, iBest!
     iBest = np.argmax(compare_values[:,1]) + 1
@@ -133,7 +133,7 @@ def class32(X_train, X_test, y_train, y_test,iBest):
         clf = helperSelectClassifier(iBest)
         clf.fit(reduced_X_train, reduced_y_train)
         y_pred = clf.predict(X_test)
-        C = confusion_matrix(y_test, y_pred)
+        C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
         compare_values.append(accuracy(C))
 
     print("a1 3.2")
@@ -164,7 +164,7 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     ks = [5]#,10, 20, 30, 40, 50]
     print('TODO Section 3.3')
     ret = np.zeros((len(ks) + 1, 2))
-    csvfile = open("a1_3.3.csv", "w")
+    csvfile = open("a1_3.3.csv", "w+")
     a133writer = csv.writer(csvfile, delimiter=',')
     #1k training set, save the index of features
     onekFeatsIdx = np.zeros((len(ks), np.max(ks)), dtype=int)
@@ -199,7 +199,7 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
         writeLine.append(pp_32k[index_32k])
         a133writer.writerow(writeLine)
 
-    #Second part:
+    #Second part: #TODO: modify to more accurate ways later.
     k = 5
     writeLine = []
     reduced_X_1k = X_1k[:,onekFeatsIdx[0,:5]]
@@ -207,7 +207,7 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     clf = helperSelectClassifier(iBest)
     clf.fit(reduced_X_1k, y_1k)
     y_pred_1k = clf.predict(reduced_X_test_1k)
-    C_1k = confusion_matrix(y_test, y_pred_1k)
+    C_1k = confusion_matrix(y_test, y_pred_1k, labels = [0,1,2,3])
     writeLine.append(accuracy(C_1k))
 
     #32k training set
@@ -216,7 +216,7 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     clf = helperSelectClassifier(iBest)
     clf.fit(reduced_X_32k, y_train)
     y_pred = clf.predict(reduced_X_test_32k)
-    C = confusion_matrix(y_test, y_pred)
+    C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
     writeLine.append(accuracy(C))
     a133writer.writerow(writeLine)
 
@@ -233,28 +233,46 @@ def class34( filename, i ):
     Parameters
        filename : string, the name of the npz file from Task 2
        i: int, the index of the supposed best classifier (from task 3.1)
-        '''
+    '''
+    print("currently, the best classifier would be {}.".format(i+1))
     feats = np.load(filename)['arr_0']
     kf = KFold(n_splits=5, random_state=0, shuffle=True)
     X = feats[:,:173]
     y = feats[:,173].astype(int)
-    accu5 = []
-    accu = np.zeros((5,5))
+    accu = np.zeros((5,5))#each row: each KFold; each col: each classifier; 
     counter = 0
+    p_values = np.array((4))
+    csvfile = open("a1_3.4.csv", "w")
+    a134writer = csv.writer(csvfile, delimiter=',')
+
     for train_index, test_index in kf.split(X):
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
-        for i in range(5):
-            clf = helperSelectClassifier(i)
+        for idx in range(5):
+            clf = helperSelectClassifier(idx + 1)
             clf.fit(X_train, y_train)
             y_pred = clf.predict(X_test)
-            C = confusion_matrix(y_test, y_pred)
-            accu[counter][i] = accuracy(C)
-        counter += 1
-    #highest = accu5.max()
+            C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
+            accu[counter][idx] = accuracy(C)
 
-    #S = stats.ttest_rel(highest)
+            break#TODO
+        counter += 1
+        break#TODO
+    #write to csv
+    a134writer.writerows(accu)
+    #OK, 25 times of classifications are done.
+    a = accu[:,i]
+    input_idx = 0
+    for idx in range(5):
+        if idx != i:
+            b = accu[:,idx]
+            S = stats.ttest_rel(a,b)
+            p_values[input_idx] = S
+            input_idx += 1
+    a124writer.writerow(p_values)
+    csvfile.close()
+    
 
 
     print('TODO Section 3.4')
