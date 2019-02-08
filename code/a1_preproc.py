@@ -7,6 +7,7 @@ import string
 
 import html
 import spacy
+from tqdm import tqdm
 
 indir = '/u/cs401/A1/data/';
 
@@ -310,7 +311,7 @@ def main(args):
     for subdir, dirs, files in os.walk(indir):
         for fl in files:
             fullFile = os.path.join(subdir, fl)
-            #print("Processing " + fullFile)
+            print("Processing " + fullFile)
 
             data = json.load(open(fullFile))
 
@@ -322,9 +323,8 @@ def main(args):
             mydata = data[startpt: startpt + args.max]
             # TODO: choose to retain fields from those lines that are relevant to you
             # TODO: add a field to each selected line called 'cat' with the value of 'file' (e.g., 'Alt', 'Right', ...)
-            retained_mydata = []
             counter = 0
-            for line in mydata:
+            for line in tqdm(mydata):
                 counter = counter + 1
                 if counter % 100 == 0:
                     print("file {} counter {}".format(fl, counter))
@@ -336,7 +336,7 @@ def main(args):
                 # TODO: process the body field (j['body']) with preproc1(...) using default for `steps` argument
                 # TODO: replace the 'body' field with the processed text
                 newline['body'] = preproc1(j['body'])
-                retained_mydata.append(newline)
+                allOutput.append(newline)
             # TODO: append the result to 'allOutput'
 
     fout = open(args.output, 'w')
