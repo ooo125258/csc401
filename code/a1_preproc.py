@@ -11,14 +11,18 @@ import spacy
 indir = '/u/cs401/A1/data/';
 
 abbrs = []
+abbrs_lower = []
 clitics = []
+clitics_lower = []
 stopwords = []
 pn_abbrs = []
 nlp = spacy.load('en', disable=['parser', 'ner'])
 
 def init():
     global abbrs
+    global abbrs_lower
     global clitics
+    global clitics_lower
     global stopwords
     global pn_abbrs
     global nlp
@@ -31,7 +35,10 @@ def init():
         with open(abbr_filename) as f:
             for line in f:
                 abbrs.append(line.rstrip('\n'))
+                    
+        abbrs_lower = [x.lower() for x in abbrs]
 
+    
     if len(clitics) == 0:
         clitics_filename = "./clitics"
         if not os.path.isfile(clitics_filename):
@@ -39,6 +46,7 @@ def init():
         with open(clitics_filename) as f:
             for line in f:
                 clitics.append(line.rstrip('\n'))
+        clitics_lower = [x.lower() for x in clitics]
 
     if len(stopwords) == 0:
         stopwords_filename = "./StopWords"
@@ -82,6 +90,7 @@ def preproc1(comment, steps=range(1, 11)):
     modComm_text = []
     modComm_lemma = []
     global nlp
+    doc = None # doc is shared in one preproc1
 
     if 1 in steps:
         if comment == "":
@@ -94,7 +103,7 @@ def preproc1(comment, steps=range(1, 11)):
         if modComm == "":
             return ""
         #print('Replace HTML character codes with their ASCII equivalent.')
-        modComm = re.sub(r"(\&\w+\;)", r" \1 ", modComm)
+        modComm = re.sub(r"(\&\w+\;)", r" \1 ", modComm)#TODO: to add space around the HTML char. But DOES IT WORTH IT?
         modComm = html.unescape(modComm)
 
     if 3 in steps:
@@ -104,7 +113,7 @@ def preproc1(comment, steps=range(1, 11)):
         #http://www.noah.org/wiki/RegEx_Python#URL_regex_pattern
         modComm = re.sub(r'[\(\[\{](?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+[\)\]\}]?', '', modComm)
             
-    if 4 in steps:
+    if 4 in steps:#TODO: modify if still slow. remember the capital abbr words
         # skip abbr, or others
 
         """
@@ -131,9 +140,9 @@ def preproc1(comment, steps=range(1, 11)):
         new_modComm = re.sub(r"(\]|\)|\})(\W|\$|\.)", r" \1 \2", new_modComm)
         # Handle the dot problem. If find a word followed by dot, then check if it's a word in abbrs list
         def periodHandler(matched):
-            lst = abbrs
+            lst = abbrs_lower
             word = matched.group().strip()
-            if word in abbrs:
+            if word in lst:
                 return " " + word + " "
             elif word[-1] == ' ' or word[-1] == '.':
                 return " " + word[:len(word) - 1] + " " + "." + " "
@@ -146,16 +155,16 @@ def preproc1(comment, steps=range(1, 11)):
         # special case: dogs'. or t'.
         modComm = new_modComm.replace("'.", "' .")
 
-    if 5 in steps:
+    if 5 in steps:# split clitics
         if modComm == "":
             return ""
         def citeHandler(matched):
-            lst = clitics
+            lst = clitics_lower
             sth_matched = str(matched.group())
             word = matched.group().strip()
-            for i in range(len(clitics)):
+            for i in range(len(lst)):
                 if clitics[i] in word:
-                    ret = " " + word.replace(clitics[i], " " + clitics[i] + " ") + " "
+                    ret = " " + word.replace(lst[i], " " + lst[i] + " ") + " "
                     return ret
             ret = word.replace("'", " ' ")
             return ret
@@ -163,10 +172,10 @@ def preproc1(comment, steps=range(1, 11)):
         new_modComm = re.sub(r"(^|\s)(\w*\'\w*)($|\s)", citeHandler, modComm)
         modComm = new_modComm
 
-    if 6 in steps:  # split clitics
+    if 6 in steps:  #tags
+        #We already know that 689 will be together.
         if modComm == "":
             return ""
-        modComm_lst = modComm.strip().split()
         if nlp is None:
             print("warning: trying to load spacy in a wrong place. It would be much slower if it happens a lot of time!")
             nlp = spacy.load('en', disable=['parser', 'ner'])
@@ -175,16 +184,20 @@ def preproc1(comment, steps=range(1, 11)):
         new_modComm_lst = []
         for token in doc:
             new_modComm_lst.append(token.text + "/" + token.tag_)
-            modComm_tags.append(token.tag_)
-            modComm_text.append(token.text)
-            modComm_lemma.append(token.lemma_)  # for later use
-
         modComm = " ".join(new_modComm_lst)
 
     if 7 in steps:  # Stop words
         # split to list, remove if in stopwords
+        # analysis when it has or not the tags
+        #replace beta/nng or beta/-lrc- or 
+        #start and end with white space or head/end
         if modComm == "":
             return ""
+        reStr = r"\b(" + r"(\s|^)" + r"|".join(stopwords) + r"\/\-?\S+\-?" + r"(\s|$)" + r")\b"
+        modcComm = re.sub(reStr, " ", modComm, flags=re.IGNORECASE)
+        new_modComm_lemma.append(modComm_lemma[idx])
+        
+        '''
         modComm_lst = modComm.split()
         if len(modComm_text) > 0:
             new_modComm_lst = []
@@ -204,45 +217,56 @@ def preproc1(comment, steps=range(1, 11)):
             new_modComm_lst = [x for x in modComm_lst if x.split('/')[0] not in stopwords]
         modComm = " ".join(new_modComm_lst)
         #print('TODO')
+        '''
 
     if 8 in steps:  # lemmazation,
-        # There are different circumstance, if 6 or 7 are executed!!!
-        # 1. if 6 is not executed, then there is no scapy! run scapy to get text and lemma! There are no tags!
+        #As piazza, 689 would be executed together.
+        #So it must have tags
+        #As we almost lemmazation all words, then it's actually useless to use regex here.
+        #Warning! stopwords may or maynot be removed!
+        
         if modComm == "":
             return ""
-        if 6 not in steps:
-            if nlp is None:
-                print("warning: trying to load spacy in a wrong place. It would be much slower if it happens a lot of time!")
-                nlp = spacy.load('en', disable=['parser', 'ner'])
-            doc = spacy.tokens.Doc(nlp.vocab, words=modComm_text)
-            doc = nlp.tagger(doc)
-            new_modComm_lst = []
-            for token in doc:
-                if token.modComm_lemma[0] == '-' and token.text[0] != '-':  ##curcumstance to keep token
-                    new_modComm_lst.append(token.text)
-                elif ord(token.lemma_[0] - 32) == ord(token.text[0]):  # To make sure make -> Make
-                    new_modComm_lst.append(token.text[0] + token.lemma_[1:])  # Now we have word lists lemmaed.
-                else:  # go->went
-                    new_modComm_lst.append(token.lemma_)
-        # 2. if 6 is executed, then the information of previous nlp is already saved!
-        else:
-            new_modComm_lst = []
-            for i in range(len(modComm_text)):
-                if modComm_lemma[i][0] == '-' and modComm_text[i][0] != '-':  ##curcumstance to keep token
-                    new_modComm_lst.append(modComm_text[i] + "/" + modComm_tags[i])
-                elif ord(modComm_lemma[i][0]) - 32 == ord(modComm_text[i][0]):
-                    new_modComm_lst.append(modComm_text[i][0] + modComm_lemma[i][1:] + "/" + modComm_tags[i])
-                    # Now we have word lists lemmaed.
-                else:
-                    new_modComm_lst.append(modComm_lemma[i] + "/" + modComm_tags[i])
 
+        modComm_lst = modComm.split()
+        new_modComm = []
+        '''
+        
+        Yes, the stopwords may or may not removed but it won't be reduced.
+        If a word happens n times, it will still be n times or zero times.
+        And the order of all words keep the same.
+        So I use the word in modComm, scan from the left to the right
+        '''
+        j = 0
+        for i in range(len(modComm_lst)):
+            new_modComm_text, new_modComm_tag = token.split()
+            while not new_modComm_text == doc[j]:
+                j += 1
+                #if j ends when i not, there would be a critical error!
+            #Now I find the correct place
+            token = doc[j]
+            if token.lemma_[0] == '-' and token.text[0] != '-':  ##curcumstance to keep token
+                new_modComm_lst.append(modComm_lst[i])#It doesn't change at all!
+            elif token.lemma_[0] == token.text[0].lower():
+                new_modComm_lst.append(token.text[j][0] + token.lemma_[j][1:] + "/" + new_modComm_tag)
+                # Now we have word lists lemmaed.
+            else:
+                new_modComm_lst.append(token.lemma_[j] + "/" + new_modComm_tag)
+            j += 1
+
+            if j > len(doc):
+                print("ERROR! j out of bound in step 8. Result bypass!")
+                break
         modComm = " ".join(new_modComm_lst)
 
     if 9 in steps:  # new line between sentences 4.2.4.
         #print('TODO')  # Mr./NNP Guardian/NNP Council/NNP .../: \n and/CC Supreme/NNP
-        #
+        #The code in comment was 4.2.4. However... as 689 together, we can use tags...
         if modComm == "":
             return ""
+
+        modComm = re.sub(r"(\S\/\.)(\s|$)", "\1 \n\2", modComm)
+        '''
         tag_scanner = r"\s*" #Handle tag exists or not
         if len(modComm_lst) == 0:
             print("ERROR here!")
@@ -273,6 +297,7 @@ def preproc1(comment, steps=range(1, 11)):
         new_modComm = re.sub(r"(\s+...)" + r"(" + tag_scanner + r")" + r"\n(\s*[a-z])", r"\1\2\3", new_modComm)
 
         modComm = new_modComm
+        '''
     if 10 in steps:  # lowercase
         if modComm == "":
             return ""
