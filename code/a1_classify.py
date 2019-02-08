@@ -72,10 +72,10 @@ def class31(filename):
     y_test = y_test.astype(int)
     compare_values = np.zeros((5,26))
     compare_values[:,0] = [1,2,3,4,5]
-    return (X_train, X_test, y_train, y_test, 1)
+    #return (X_train, X_test, y_train, y_test, 1)
     
     for i in range(5):
-        print("linearSVC")
+        print("Method i")
         clf = helperSelectClassifier(i + 1)
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
