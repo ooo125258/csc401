@@ -15,14 +15,11 @@ def wordTagSplit(token):
         (word, tag) = format
     else:
         print("something strange input! word: {}".format(token))
-        return None
+        return format[0], format[-1]
     return word, tag
-        
-def helper_8(token):
-    format = re.match(r'^(.*)\/(\w+)$', token, re.I)
 
 def extract1( comment ):
-    comment = " I/PRON You/PRON His/PRON and/CC did/VBD will/FUT going/ING to/CC ,/COMMA ,??/PUNCT noun/NN noun/NNS very/RB why/WP lmao/SL"
+    #comment = " I/PRON You/PRON His/PRON and/CC did/VBD will/FUT going/ING to/CC ,/COMMA ,??/PUNCT noun/NN noun/NNS very/RB why/WP lmao/SL"
     #TODO:how do you deal with ?!?
     #TODO: if only one char, it's really possible to get error!
     #TODO: handle xx
@@ -46,6 +43,7 @@ def extract1( comment ):
     len_sentences = len(sentences)
     feats = [0] * 30 #This is for first 29.
 
+    #counters fo  18
     total_char_len_nopunctonly_16 = 0
     total_tokens_num_nopunctonly_16 = 0
 
@@ -60,6 +58,8 @@ def extract1( comment ):
     A = []
     D = []
 
+    #Statistics for xx:
+    xx_file = open("xx.txt", "w+")
     with open("BristolNorms+GilhoolyLogie.csv") as BGcsv:
         reader = csv.reader(BGcsv)
         for line in reader:
@@ -143,7 +143,7 @@ def extract1( comment ):
             if len(word) >= 3 and word.isupper():
                 feats[14] += 1
             
-            #18 if token
+            #18-20 if token
             if lower_word in BG:
                 AOAs.append(BG[lower_word][3])
                 IMGs.append(BG[lower_word][4])
@@ -155,7 +155,7 @@ def extract1( comment ):
                 D.append(RW[lower_word][8])
 
             if tag == "xx":
-                print("unknown xx word: {} in sentence {}.".format(tokens[i], sentence))
+                print("unknown xx word: {} in sentence {}.".format(tokens[i], sentence), file=xx_file)
 
             #16
             if not all(i in string.punctuation for i in lower_word):
@@ -170,17 +170,85 @@ def extract1( comment ):
         feats[16] = total_char_len_nopunctonly_16 / total_tokens_num_nopunctonly_16
     #17 num of sentences
         feats[17] = len_sentences
-    #18 avg aoa:
+    #18,21 avg aoa:
+    if len(AOAs) > 0:
+        feats[18] = np.mean(AOAs)
+        feats[21] = np.std(AOAs)
+    #19, 22IMG
+    if len(IMGs) > 0:
+        feats[19] = np.mean(IMGs)
+        feats[22] = np.std(IMGs)
+    #20,23
+    if len(FAMs) > 0:
+        feats[20] = np.mean(FAMs)
+        feats[23] = np.std(FAMs)
 
+    #24,27
+    if len(V) > 0:
+        feats[24] = np.mean(V)
+        feats[27] = np.std(V)
+    #25, 28IMG
+    if len(A) > 0:
+        feats[25] = np.mean(A)
+        feats[28] = np.std(A)
+    #26,29
+    if len(D) > 0:
+        feats[26] = np.mean(D)
+        feats[29] = np.std(D)
+    
+    return np.array(feats[1:])#Return 29 bits
 
 
 
 def main( args ):
 
     data = json.load(open(args.input))
-    feats = np.zeros( (len(data), 173+1))
+    feats = np.zeros( (len(data), 174))
 
     # TODO: your code here
+    alt_feats = np.load("/u/cs401/A1/feats/Alt_feats.dat.npy")
+    alt_IDs = np.loadtxt("/u/cs401/A1/feats/Alt_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+    print("doing 2")
+    llwc_feats = np.loadtxt("/u/cs401/A1/feats/feats.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+    left_feats = np.load("/u/cs401/A1/feats/Left_feats.dat.npy")
+    print("doing 3")
+    left_IDs = np.loadtxt("/u/cs401/A1/feats/Left_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+    right_feats = np.load("/u/cs401/A1/feats/Right_feats.dat.npy")
+    right_IDs = np.loadtxt("/u/cs401/A1/feats/Right_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+    print("doing 4")
+    center_feats = np.load("/u/cs401/A1/feats/Center_feats.dat.npy")
+    center_IDs = np.loadtxt("/u/cs401/A1/feats/Center_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
+    print("doing 5")
+
+    from tqdm import tqdm
+    for i in tqdm(range(len(data))):
+        # if (i % 100 == 0):
+        #     print("complete: "+ str(i/float(len(data))*100) + "%")
+        feats[i][:,29] = extract1(data[i]["body"])
+        
+        #It could be better ways, as the number is fixed.
+        #But I haven't prove it.
+        
+        if (data[i]["cat"] == "Left"):
+            itemindex, = np.where(left_IDs == data[i]["id"])
+            thisFeat = left_feats[itemindex]
+            feats[i][29:174] = thisFeat
+            feats[i][-1] = 0
+        elif (data[i]["cat"] == "Center"):
+            itemindex, = np.where(center_IDs == data[i]["id"])
+            thisFeat = center_feats[itemindex]
+            feats[i][29:174] = thisFeat
+            feats[i][-1] = 1
+        elif (data[i]["cat"] == "Right"):
+            itemindex, = np.where(right_IDs == data[i]["id"])
+            thisFeat = right_feats[itemindex]
+            feats[i][29:174] = thisFeat
+            feats[i][-1] = 2
+        elif (data[i]["cat"] == "Alt"):
+            feats[i][-1] = 3
+            itemindex, = np.where(alt_IDs == data[i]["id"])
+            thisFeat = alt_feats[itemindex]
+            feats[i][29:174] = thisFeat
 
     np.savez_compressed( args.output, feats)
 
