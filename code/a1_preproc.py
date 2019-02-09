@@ -115,8 +115,8 @@ def preproc1(comment, steps=range(1, 11)):
         # print('Remove all URLs http/www/https')
         # modified from : https://daringfireball.net/2010/07/improved_regex_for_matching_urls
         modComm = re.sub(
-            r"([\(\[\{]?(((http[s]?):\/\/)|(www\.)[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:\/~\+#]*[\w\-\@?^=%&amp;\/~\+#])?)[\)\]\}]?)",
-            r'', modComm)
+            r"([\(\[\{]?((((http[s]?):\/\/)|(www\.))[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:\/~\+#]*[\w\-\@?^=%&amp;\/~\+#])?)[\)\]\}]?)",
+            r' ', modComm)
         # modComm = re.sub(
         #    r'(?:(?:http|https)?:\/\/)?([-a-zA-Z0-9.]{2,256}\.[a-z]{2,4})\b(?:\/[-a-zA-Z0-9@:%_\+.~#?&/=>]*)?',
         #    "", modComm, flags=re.MULTILINE)
@@ -135,8 +135,8 @@ def preproc1(comment, steps=range(1, 11)):
         if modComm == "":
             return ""
         # first, split the abbv seperately, with space. to do it better.
-        str = abbs_withdot
-        reStr = r"\b(" + r"|".join(abbrs) + r")\b"
+        #str = abbs_withdot
+        #reStr = r"\b(" + r"|".join(abbrs) + r")\b"
         # reStr = re.sub(r"\.", r"\.", reStr)
         # restr = re.sub('\\', r"\\", reStr)
         new_modComm = re.sub(#Sorry, but when adding \., it will translate to \\. at once.
@@ -228,8 +228,13 @@ def preproc1(comment, steps=range(1, 11)):
         # pattern = re.compile(r"\s/[\w]+(?=\s)")
         # modComm = pattern.sub(r'', modComm)
         # re.sub(r'\b\s(' + r'|'.join(stopwords) + r')\/\b', r' /', modComm)
-        reStr = r"(" + r"(\s|^)(" + r"|".join(stopwords) + r")\/\-?\S+\-?" + r"(\s|$)" + r")"
-        modComm = re.sub(reStr, " ", modComm, flags=re.IGNORECASE)
+        reStr = re.compile(r"(" + r"(\s|^)(" + r"|".join(stopwords) + r")\/\-?\S+\-?" + r"(\s|$)" + r")", flags=re.IGNORECASE)
+        new_modComm = reStr.sub(" ", modComm)
+        while new_modComm != modComm:
+            tmp = new_modComm
+            new_modComm = reStr.sub(" ", modComm)
+            modComm = tmp
+
 
         '''
         modComm_lst = modComm.split()
