@@ -128,8 +128,13 @@ def preproc1(comment, steps=range(1, 11)):
         """
         if modComm == "":
             return ""
+        #first, split the abbv seperately, with space. to do it better.
+        reStr = r"(" + r"|".join(abbrs_lower) + r")"
+        modComm = re.sub(reStr, " \1 ", modComm, flags=re.IGNORECASE)
+
         # Dot here is a problem. The one dot situation will be handled later. For all "..." and "?.?" will be handled
         # It's ridiculous, but ... has higher priority.
+
         new_modComm = re.sub(r"(\.\.\.)(\w|\s|$)", r" \1 \2", modComm)
         new_modComm = re.sub(
             r"(\w|\s\^)(\.\.\.|[\!\#\$\%\&\\\(\)\*\+\,\-\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~\.\']{2,}|[\!\#\$\%\&\\\(\)\*\+\,\-\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~])(\w|\s|$)",
@@ -143,16 +148,14 @@ def preproc1(comment, steps=range(1, 11)):
         def periodHandler(matched):
             lst = abbrs_lower
             word = matched.group().strip()
-            if word in lst:
+            if word.lower() in lst:
                 return " " + word + " "
-            elif word[-1] == ' ' or word[-1] == '.':
-                return " " + word[:len(word) - 1] + " " + "." + " "
             else:  # There is such a situation: apple.Tree e.g..Tree apple.E.g. So I choose the capital to be the identifier.
-                return re.sub(r"(\w+)(\.)([A-Z])$", r" \1 \2 \3", word)
+                return word.replace(".", " . ")
 
         # e.g.. , e.g. something, etc. something, something.
         # Another situation is something.\nsomething, such that it's connected!
-        new_modComm = re.sub(r"(^|\s)((\w+\.)+\.?)($|\s|\w+)", periodHandler, new_modComm)
+        new_modComm = re.sub(r"(^|\s)((\w+\.)+\.?)($|\s)", periodHandler, new_modComm, re.IGNORECASE)
         # special case: dogs'. or t'.
         modComm = new_modComm.replace("'.", "' .")
 
@@ -161,10 +164,10 @@ def preproc1(comment, steps=range(1, 11)):
             return ""
         def citeHandler(matched):
             lst = clitics_lower
-            sth_matched = str(matched.group())
             word = matched.group().strip()
+            word_lower = word.lower()
             for i in range(len(lst)):
-                if clitics[i] in word:
+                if lst[i] in word_lower:
                     ret = " " + word.replace(lst[i], " " + lst[i] + " ") + " "
                     return ret
             ret = word.replace("'", " ' ")
@@ -172,6 +175,7 @@ def preproc1(comment, steps=range(1, 11)):
 
         new_modComm = re.sub(r"(^|\s)(\w*\'\w*)($|\s)", citeHandler, modComm)
         modComm = new_modComm
+
 
     if 6 in steps:  #tags
         #We already know that 689 will be together.
@@ -195,7 +199,7 @@ def preproc1(comment, steps=range(1, 11)):
         if modComm == "":
             return ""
         reStr = r"\b(" + r"(\s|^)" + r"|".join(stopwords) + r"\/\-?\S+\-?" + r"(\s|$)" + r")\b"
-        modcComm = re.sub(reStr, " ", modComm, flags=re.IGNORECASE)
+        modComm = re.sub(reStr, " ", modComm, flags=re.IGNORECASE)
         
         '''
         modComm_lst = modComm.split()
