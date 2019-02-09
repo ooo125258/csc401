@@ -79,7 +79,7 @@ def class31(filename):
         clf = helperSelectClassifier(i + 1)
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
-        C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
+        C = confusion_matrix(y_test, y_pred)#, labels = [0,1,2,3]
         compare_values[i][1] = accuracy(C)
         compare_values[i][2:6] = recall(C)
         compare_values[i][6:10] = precision(C)
