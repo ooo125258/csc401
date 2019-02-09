@@ -115,7 +115,7 @@ def preproc1(comment, steps=range(1, 11)):
         # print('Remove all URLs http/www/https')
         # modified from : https://daringfireball.net/2010/07/improved_regex_for_matching_urls
         modComm = re.sub(
-            r"([\(\[\{]?(?:https?:\/\/|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'\".,<>?«»“”‘’])[\)\]\}]?)",
+            r"([\(\[\{]?(((http[s]?):\/\/)|(www\.)[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:\/~\+#]*[\w\-\@?^=%&amp;\/~\+#])?)[\)\]\}]?)",
             r'', modComm)
         # modComm = re.sub(
         #    r'(?:(?:http|https)?:\/\/)?([-a-zA-Z0-9.]{2,256}\.[a-z]{2,4})\b(?:\/[-a-zA-Z0-9@:%_\+.~#?&/=>]*)?',
@@ -373,6 +373,9 @@ def main(args):
             # TODO: add a field to each selected line called 'cat' with the value of 'file' (e.g., 'Alt', 'Right', ...)
             counter = 0
             for line in tqdm(mydata):
+                #print(counter)
+                #if counter == 5209:
+                #    print(1)
                 counter = counter + 1
                 # if counter % 100 == 0:
                 #    print("file {} counter {}".format(fl, counter))
