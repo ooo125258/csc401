@@ -8,6 +8,7 @@ from numpy import loadtxt
 import re
 import string
 
+import csv
 def wordTagSplit(token):
     format = re.match(r'^(.*)\/(\w+)$', token, re.I)
     if len(format) == 2:
@@ -42,17 +43,44 @@ def extract1( comment ):
     slang = loadtxt("/u/cs401/Wordlists/Slang", comments="#", delimiter="\n", unpack=False)
     #Now, start to check the words
     sentences = comment.split("\n")
+    len_sentences = len(sentences)
+    feats = [0] * 30 #This is for first 29.
 
-    numbers = [0] * 30 #This is for first 29.
+    total_char_len_nopunctonly_16 = 0
+    total_tokens_num_nopunctonly_16 = 0
+
+    #dict for 17+
+    BG = {}
+    RW = {}
+
+    AOAs = []
+    IMGs = []
+    FAMs = []
+    V = []
+    A = []
+    D = []
+
+    with open("BristolNorms+GilhoolyLogie.csv") as BGcsv:
+        reader = csv.reader(BGcsv)
+        for line in reader:
+            BG[line[1]] = line
+    with open("Ratings_Warriner_et_al.csv") as RWcsv:
+        reader = csv.reader(RWcsv)
+        for line in reader:
+            RW[line[1]] = line
+
+    
     for sentence in sentences:
         #to avoid some silly empty string.
         if sentence == "" or sentence is None:
+            len_sentences -= 1
             continue
 
         tokens = sentence.split()
-
         for i in range(len(tokens)):
+
             if tokens[i] == "":
+                total_num_tokens -= 1
                 continue
             #The word should be word/tag format
             ret = wordTagSplit(tokens[i])
@@ -67,58 +95,83 @@ def extract1( comment ):
             # 1,2,3, 1st/2nd/3rd person pronoun
             lower_word = word.lower()
             if lower_word in PRP_1st:
-                numbers[1] += 1
-            elif lower_word in PRP_2nd:
-                numbers[2] += 1
-            elif lower_word in PRP_3rd:
-                numbers[3] += 1
+                feats[1] += 1
+            if lower_word in PRP_2nd:
+                feats[2] += 1
+            if lower_word in PRP_3rd:
+                feats[3] += 1
             #4, CC
-            elif tag == "CC":
-                numbers[4] += 1
+            if tag == "CC":
+                feats[4] += 1
             #5, VBD
-            elif tag == "VBD":
-                numbers[5] += 1
+            if tag == "VBD":
+                feats[5] += 1
             #6, Future
             #going to will be handled in present TODO: related to "will"
-            elif lower_word in future_tense_verbs:
-                numbers[6] += 1
-            elif lower_word == "going" and i <= len(tokens) - 2:
+            if lower_word in future_tense_verbs:
+                feats[6] += 1
+            if (lower_word == "going" or (lower_word == "go" and tag == "VBG")) and i <= len(tokens) - 2:
                 #judge for to do
                 #pos_for_TO: 
                 first_token = wordTagSplit(tokens[i + 1])                
                 second_token = wordTagSplit(tokens[i + 2])
-                if first_token[0].lower() == "to" and first_token[1] in ["VB", "VBG", "VBP"]:
-                    numbers[6] += 1
+                if first_token[0].lower() == "to" and first_token[1] == "TO" and second_token[1] in ["VB", "VBP"] :
+                    feats[6] += 1
             #7, comma
-            elif lower_word == ',':
-                numbers[7] += 1
+            if lower_word == ',':
+                feats[7] += 1
             #8, multi-char punctuation tokens
-            #multi
-            elif len(lower_word) > 1 and all(i in string.punctuation for i in lower_word):
-                numbers[8] += 1
+            #multi #TODO: may be simplified to accelerate
+            if len(lower_word) > 1 and all(i in string.punctuation for i in lower_word):
+                feats[8] += 1
             #9, common nouns
-            elif tag in ["NN", "NNS"]:
-                numbers[9] += 1
+            if tag in ["NN", "NNS"]:
+                feats[9] += 1
             #10, proper nouns
-            elif tag in ["NNP", "NNPS"]:
-                numbers[10] += 1
+            if tag in ["NNP", "NNPS"]:
+                feats[10] += 1
             #11, adverbs
-            elif tag in ["RB", "RBR", "RBS", "RP"]:
-                numbers[11] += 1
+            if tag in ["RB", "RBR", "RBS", "RP"]:
+                feats[11] += 1
             #12, wh- words
-            elif tag in ["WDT", "WP", "WP$", "WRB"]:
-                numbers[12] += 1
+            if tag in ["WDT", "WP", "WP$", "WRB"]:
+                feats[12] += 1
             #13, slang acronyms
-            elif tag in slang:
-                numbers[13] += 1
+            if tag in slang:
+                feats[13] += 1
             #14, words in uppercase
-            elif len(word) >= 3 and word.isupper():
-                numbers[14] += 1
-            else:
-                if tag == "xx":
-                    print("unknown xx word: {} in sentence {}.".format(tokens[i], sentence))
-                else:
-                    print("unknown other word: {} in sentence {}.".format(tokens[i], sentence))
+            if len(word) >= 3 and word.isupper():
+                feats[14] += 1
+            
+            #18 if token
+            if lower_word in BG:
+                AOAs.append(BG[lower_word][3])
+                IMGs.append(BG[lower_word][4])
+                FAMs.append(BG[lower_word][5])
+            #24-26
+            if lower_word in RW:
+                V.append(RW[lower_word][2])
+                A.append(RW[lower_word][5])
+                D.append(RW[lower_word][8])
+
+            if tag == "xx":
+                print("unknown xx word: {} in sentence {}.".format(tokens[i], sentence))
+
+            #16
+            if not all(i in string.punctuation for i in lower_word):
+                total_char_len_nopunctonly_16 += len(word)
+                total_tokens_num_nopunctonly_16 += 1
+
+    #15, average len of sentences in tokens
+    if len_sentences != 0:
+        feats[15] = len(tokens) / len_sentences
+    #16 avg len of tokens, excluding punct-only
+    if total_tokens_num_nopunctonly_16 > 0:
+        feats[16] = total_char_len_nopunctonly_16 / total_tokens_num_nopunctonly_16
+    #17 num of sentences
+        feats[17] = len_sentences
+    #18 avg aoa:
+
 
 
 
