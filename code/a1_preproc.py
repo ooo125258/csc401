@@ -84,11 +84,6 @@ def preproc1(comment, steps=range(1, 11)):
         modComm : string, the modified comment 
     '''
     init()
-
-    comment = "&gt; You mean, besides being one of a handful of states known to be a State sponsor of terrorism?\
-    You mean like us in the e.g. United States supporting [Cuban terrorists](http://en.wikipedia.org/wiki/Luis_Posada_Carriles) or [Al-Qaeda](http://en.wikipedia.org/wiki/Al-Qaeda)!?? \
-    &gt;I wouldn't go so far as to say the Mr. Guardian Council... and Supreme Leader are rational - and given they are Islamists,?.?the concept of MAD does not apply.\
-    Really? Because they're Islamist they're not rational? That's why I don't like it.\n\nAny more! e.g.... alpha... clitic's dogs'. dogs'  t'challa - y'all 'I don't think it's a good sentence.' apple.Tree e.g..Tree apple.E.g."
     modComm = ''
 
     modComm_tags = []
