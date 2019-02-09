@@ -243,7 +243,7 @@ def preproc1(comment, steps=range(1, 11)):
         '''
         j = 0
         for i in range(len(modComm_lst)):
-            new_modComm_text, new_modComm_tag = token.split()
+            new_modComm_text, new_modComm_tag = modComm_lst.split()
             while not new_modComm_text == doc[j]:
                 j += 1
                 #if j ends when i not, there would be a critical error!
