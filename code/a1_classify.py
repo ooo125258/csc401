@@ -87,6 +87,7 @@ def class31(filename):
 
     #Go, iBest!
     iBest = np.argmax(compare_values[:,1]) + 1
+    
 
     #TODO: for debug use:
     print(iBest)

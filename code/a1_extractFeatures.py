@@ -10,10 +10,56 @@ import string
 
 import csv
 
+PRP_1st = None
+PRP_2nd = None
+PRP_3rd = None
+slang = None
+future_tense_verbs = None
+BG = None
+RW = None
 
+
+def init():
+	global PRP_1st
+	global PRP_2nd
+	global PRP_3rd
+	global future_tense_verbs
+	global slang
+	global BG
+	global RW
+	if PRP_1st is None: PRP_1st = loadtxt("/u/cs401/Wordlists/First-person", comments="#", delimiter="\n", unpack=False,
+	                                      dtype=str)
+	if PRP_2nd is None: PRP_2nd = loadtxt("/u/cs401/Wordlists/Second-person", comments="#", delimiter="\n", unpack=False,
+	                                      dtype=str)
+	if PRP_3rd is None: PRP_3rd = loadtxt("/u/cs401/Wordlists/Third-person", comments="#", delimiter="\n", unpack=False,
+	                                      dtype=str)
+	if slang is None: slang = loadtxt("/u/cs401/Wordlists/Slang", comments="#", delimiter="\n", unpack=False, dtype=str)
+	
+	# PRP_1st = loadtxt("/u/cs401/Wordlists/First-person", comments="#", delimiter="\n", unpack=False, dtype=str)
+	# PRP_2nd = loadtxt("/u/cs401/Wordlists/Second-person", comments="#", delimiter="\n", unpack=False, dtype=str)
+	# PRP_3rd = loadtxt("/u/cs401/Wordlists/Third-person", comments="#", delimiter="\n", unpack=False, dtype=str)
+	# slang = loadtxt("/u/cs401/Wordlists/Slang", comments="#", delimiter="\n", unpack=False, dtype=str)
+	
+	if future_tense_verbs is None: future_tense_verbs = ["'ll", "will",
+	                                                     "gonna"]  # The last one is going to VB, consider later
+	# dict for 17+
+	if BG is None:
+		BG = {}
+		with open("BristolNorms+GilhoolyLogie.csv") as BGcsv:
+			reader = csv.reader(BGcsv)
+			for line in reader:
+				BG[line[1]] = line
+	if RW is None:
+		RW = {}
+		with open("Ratings_Warriner_et_al.csv") as RWcsv:
+			reader = csv.reader(RWcsv)
+			for line in reader:
+				RW[line[1]] = line
+				
 def wordTagSplit(token):
 	format = re.match(r'^(.*)\/(\S+)$', token, re.I)
 	if format is None:
+		print("None Token here!!!")
 		print(token)
 	if format.lastindex == 2:
 		word = format.group(1)
@@ -24,7 +70,9 @@ def wordTagSplit(token):
 	return word, tag
 
 
+
 def extract1(comment):
+	init()
 	# comment = " I/PRON You/PRON His/PRON and/CC did/VBD will/FUT going/ING to/CC ,/COMMA ,??/PUNCT noun/NN noun/NNS very/RB why/WP lmao/SL"
 	# TODO:how do you deal with ?!?
 	# TODO: if only one char, it's really possible to get error!
@@ -37,20 +85,11 @@ def extract1(comment):
 	Returns:
 		feats : numpy Array, a 173-length vector of floating point features (only the first 29 are expected to be filled, here)
 	'''
-	print('TODO')
+	#print('TODO')
 	# TODO: your code here
-	PRP_1st = loadtxt("../Wordlists/First-person", comments="#", delimiter="\n", unpack=False, dtype=str)
-	PRP_2nd = loadtxt("../Wordlists/Second-person", comments="#", delimiter="\n", unpack=False, dtype=str)
-	PRP_3rd = loadtxt("../Wordlists/Third-person", comments="#", delimiter="\n", unpack=False, dtype=str)
-	slang = loadtxt("../Wordlists/Slang", comments="#", delimiter="\n", unpack=False, dtype=str)
+	
 
-	# PRP_1st = loadtxt("/u/cs401/Wordlists/First-person", comments="#", delimiter="\n", unpack=False, dtype=str)
-	# PRP_2nd = loadtxt("/u/cs401/Wordlists/Second-person", comments="#", delimiter="\n", unpack=False, dtype=str)
-	# PRP_3rd = loadtxt("/u/cs401/Wordlists/Third-person", comments="#", delimiter="\n", unpack=False, dtype=str)
-	# slang = loadtxt("/u/cs401/Wordlists/Slang", comments="#", delimiter="\n", unpack=False, dtype=str)
-
-	future_tense_verbs = ["'ll", "will", "gonna"]  # The last one is going to VB, consider later
-
+	
 	# Now, start to check the words
 	sentences = comment.split("\n")
 	len_sentences = len(sentences)
@@ -60,9 +99,7 @@ def extract1(comment):
 	total_char_len_nopunctonly_16 = 0
 	total_tokens_num_nopunctonly_16 = 0
 
-	# dict for 17+
-	BG = {}
-	RW = {}
+	
 
 	AOAs = []
 	IMGs = []
@@ -72,15 +109,8 @@ def extract1(comment):
 	D = []
 
 	# Statistics for xx:
-	xx_file = open("xx.txt", "w+")
-	with open("BristolNorms+GilhoolyLogie.csv") as BGcsv:
-		reader = csv.reader(BGcsv)
-		for line in reader:
-			BG[line[1]] = line
-	with open("Ratings_Warriner_et_al.csv") as RWcsv:
-		reader = csv.reader(RWcsv)
-		for line in reader:
-			RW[line[1]] = line
+	#xx_file = open("xx.txt", "w+")
+	
 
 	for sentence in sentences:
 		# to avoid some silly empty string.
@@ -166,7 +196,7 @@ def extract1(comment):
 				D.append(float(RW[lower_word][8]))
 
 			if tag == "xx":
-				print("unknown xx word: {} in sentence {}.".format(tokens[i], sentence), file=xx_file)
+				print("unknown xx word: {} in sentence {}.".format(tokens[i], sentence))#, file=xx_file)
 
 			# 16
 			if not all(i in string.punctuation for i in lower_word):
@@ -215,6 +245,7 @@ def main(args):
 	feats = np.zeros((len(data), 174))
 
 	# TODO: your code here
+	'''
 	alt_feats = np.load("../feats/Alt_feats.dat.npy")
 	alt_IDs = np.loadtxt("../feats/Alt_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
 	print("doing 2")
@@ -242,7 +273,7 @@ def main(args):
 	center_feats = np.load("/u/cs401/A1/feats/Center_feats.dat.npy")
 	center_IDs = np.loadtxt("/u/cs401/A1/feats/Center_IDs.txt", comments="#", delimiter="\n", unpack=False, dtype=str)
 	print("doing 5")
-	'''
+	
 	from tqdm import tqdm
 	for i in tqdm(range(len(data))):
 		# if (i % 100 == 0):
