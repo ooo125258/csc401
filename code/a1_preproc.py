@@ -1,11 +1,10 @@
 import sys
-import argparse
-import os
-import json
-import re
-import string
 
+import argparse
 import html
+import json
+import os
+import re
 import spacy
 from tqdm import tqdm
 
@@ -13,22 +12,26 @@ indir = '/u/cs401/A1/data/';
 
 abbrs = []
 abbrs_lower = []
+abbs_withdot = ""
 clitics = []
 clitics_lower = []
 stopwords = []
 pn_abbrs = []
 nlp = spacy.load('en', disable=['parser', 'ner'])
 
+
 def init():
     global abbrs
     global abbrs_lower
+    global abbs_withdot
     global clitics
     global clitics_lower
     global stopwords
     global pn_abbrs
     global nlp
 
-    nlp = spacy.load('en', disable=['parser', 'ner'])
+    if nlp is None:
+        nlp = spacy.load('en', disable=['parser', 'ner'])
     if len(abbrs) == 0:
         abbr_filename = "./abbrev.english"
         if not os.path.isfile(abbr_filename):
@@ -36,10 +39,9 @@ def init():
         with open(abbr_filename) as f:
             for line in f:
                 abbrs.append(line.rstrip('\n'))
-                    
+
         abbrs_lower = [x.lower() for x in abbrs]
 
-    
     if len(clitics) == 0:
         clitics_filename = "./clitics"
         if not os.path.isfile(clitics_filename):
@@ -81,40 +83,49 @@ def preproc1(comment, steps=range(1, 11)):
     Returns:
         modComm : string, the modified comment 
     '''
-    #comment = "&gt; You mean, besides being one of a handful of states known to be a State sponsor of terrorism?\
-    #You mean like us in the e.g. United States supporting [Cuban terrorists](http://en.wikipedia.org/wiki/Luis_Posada_Carriles) or [Al-Qaeda](http://en.wikipedia.org/wiki/Al-Qaeda)!?? \
-    #&gt;I wouldn't go so far as to say the Mr. Guardian Council... and Supreme Leader are rational - and given they are Islamists,?.?the concept of MAD does not apply.\
-    #Really? Because they're Islamist they're not rational? That's why I don't like it.\n\nAny more! e.g.... alpha... clitic's dogs'. dogs'  t'challa - y'all 'I don't think it's a good sentence.'"
-    modComm = ''
     init()
+
+    comment = "&gt; You mean, besides being one of a handful of states known to be a State sponsor of terrorism?\
+    You mean like us in the e.g. United States supporting [Cuban terrorists](http://en.wikipedia.org/wiki/Luis_Posada_Carriles) or [Al-Qaeda](http://en.wikipedia.org/wiki/Al-Qaeda)!?? \
+    &gt;I wouldn't go so far as to say the Mr. Guardian Council... and Supreme Leader are rational - and given they are Islamists,?.?the concept of MAD does not apply.\
+    Really? Because they're Islamist they're not rational? That's why I don't like it.\n\nAny more! e.g.... alpha... clitic's dogs'. dogs'  t'challa - y'all 'I don't think it's a good sentence.' apple.Tree e.g..Tree apple.E.g."
+    modComm = ''
+
     modComm_tags = []
     modComm_text = []
     modComm_lemma = []
     global nlp
-    doc = None # doc is shared in one preproc1
+    doc = None  # doc is shared in one preproc1
 
     if 1 in steps:
         if comment == "":
             return ""
-        #print('Remove all newline characters.')
+        # print('Remove all newline characters.')
+        # modComm = modComm.replace('\n', '')
         modComm = re.sub(r"(\.?)(\r?\n)+", r" \1 ", comment)
         # modComm = comment.replace("\.\n", " \.")
         # modComm = comment.replace("\n", "")
     if 2 in steps:
         if modComm == "":
             return ""
-        #print('Replace HTML character codes with their ASCII equivalent.')
-        modComm = re.sub(r"(\&\w+\;)", r" \1 ", modComm)#TODO: to add space around the HTML char. But DOES IT WORTH IT?
+        # modComm = html.unescape(comment)
+        # print('Replace HTML character codes with their ASCII equivalent.')
+        modComm = re.sub(r"(\&\w+\;)", r" \1 ",
+                         modComm)  # TODO: to add space around the HTML char. But DOES IT WORTH IT?
         modComm = html.unescape(modComm)
 
     if 3 in steps:
         if modComm == "":
             return ""
-        #print('Remove all URLs http/www/https')
-        #modified from : https://daringfireball.net/2010/07/improved_regex_for_matching_urls
-        modComm = re.sub(r"((\s|^)[\(\[\{]*(?:https?:\/\/|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'\".,<>?«»“”‘’])(\s|$))", '', modComm)
-            
-    if 4 in steps:#TODO: modify if still slow. remember the capital abbr words
+        # print('Remove all URLs http/www/https')
+        # modified from : https://daringfireball.net/2010/07/improved_regex_for_matching_urls
+        modComm = re.sub(
+            r"([\(\[\{]?(?:https?:\/\/|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'\".,<>?«»“”‘’])[\)\]\}]?)",
+            r'', modComm)
+        # modComm = re.sub(
+        #    r'(?:(?:http|https)?:\/\/)?([-a-zA-Z0-9.]{2,256}\.[a-z]{2,4})\b(?:\/[-a-zA-Z0-9@:%_\+.~#?&/=>]*)?',
+        #    "", modComm, flags=re.MULTILINE)
+    if 4 in steps:  # TODO: modify if still slow. remember the capital abbr words
         # skip abbr, or others
 
         """
@@ -128,22 +139,28 @@ def preproc1(comment, steps=range(1, 11)):
         """
         if modComm == "":
             return ""
-        #first, split the abbv seperately, with space. to do it better.
-        reStr = r"(" + r"|".join(abbrs_lower) + r")"
-        modComm = re.sub(reStr, " \1 ", modComm, flags=re.IGNORECASE)
+        # first, split the abbv seperately, with space. to do it better.
+        str = abbs_withdot
+        reStr = r"\b(" + r"|".join(abbrs) + r")\b"
+        # reStr = re.sub(r"\.", r"\.", reStr)
+        # restr = re.sub('\\', r"\\", reStr)
+        new_modComm = re.sub(#Sorry, but when adding \., it will translate to \\. at once.
+            r"(Ala\.|Ariz\.|Assn\.|Atty\.|Aug\.|Ave\.|Bldg\.|Blvd\.|Calif\.|Capt\.|Cf\.|Ch\.|Co\.|Col\.|Colo\.|Conn\.|Corp\.|DR\.|Dec\.|Dept\.|Dist\.|Dr\.|Drs\.|Ed\.|Eq\.|FEB\.|Feb\.|Fig\.|Figs\.|Fla\.|Ga\.|Gen\.|Gov\.|HON\.|Ill\.|Inc\.|JR\.|Jan\.|Jr\.|Kan\.|Ky\.|La\.|Lt\.|Ltd\.|MR\.|MRS\.|Mar\.|Mass\.|Md\.|Messrs\.|Mich\.|Minn\.|Miss\.|Mmes\.|Mo\.|Mr\.|Mrs\.|Ms\.|Mx\.|Mt\.|NO\.|No\.|Nov\.|Oct\.|Okla\.|Op\.|Ore\.|Pa\.|Pp\.|Prof\.|Prop\.|Rd\.|Ref\.|Rep\.|Reps\.|Rev\.|Rte\.|Sen\.|Sept\.|Sr\.|St\.|Stat\.|Supt\.|Tech\.|Tex\.|Va\.|Vol\.|Wash\.|al\.|av\.|ave\.|ca\.|cc\.|chap\.|cm\.|cu\.|dia\.|dr\.|eqn\.|etc\.|fig\.|figs\.|ft\.|gm\.|hr\.|in\.|kc\.|lb\.|lbs\.|mg\.|ml\.|mm\.|mv\.|nw\.|oz\.|pl\.|pp\.|sec\.|sq\.|st\.|vs\.|yr\.|i\.e\.|e\.g\.)",
+            r" \1 ", modComm, flags=re.IGNORECASE)
 
         # Dot here is a problem. The one dot situation will be handled later. For all "..." and "?.?" will be handled
         # It's ridiculous, but ... has higher priority.
 
-        new_modComm = re.sub(r"(\.\.\.)(\w|\s|$)", r" \1 \2", modComm)
+        new_modComm = re.sub(r"(\.\.\.)(\w|\s|$)", r" \1 \2", new_modComm)
         new_modComm = re.sub(
             r"(\w|\s\^)(\.\.\.|[\!\#\$\%\&\\\(\)\*\+\,\-\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~\.\']{2,}|[\!\#\$\%\&\\\(\)\*\+\,\-\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~])(\w|\s|$)",
             r"\1 \2 \3", new_modComm)
         # Special operation for brackets
         new_modComm = re.sub(r"(\W|\^)([\[\(\{\'\"])", r"\1 \2 ", new_modComm)
-        #quote is a problem. when \w+\', you don't know if it's person's or the player'FLASH' or sth.
-        #But you are sure that if \s\', it must be a quote for reference!
+        # quote is a problem. when \w+\', you don't know if it's person's or the player'FLASH' or sth.
+        # But you are sure that if \s\', it must be a quote for reference!
         new_modComm = re.sub(r"(\]|\)|\})(\W|\$|\.)", r" \1 \2", new_modComm)
+
         # Handle the dot problem. If find a word followed by dot, then check if it's a word in abbrs list
         def periodHandler(matched):
             lst = abbrs_lower
@@ -155,13 +172,23 @@ def preproc1(comment, steps=range(1, 11)):
 
         # e.g.. , e.g. something, etc. something, something.
         # Another situation is something.\nsomething, such that it's connected!
-        new_modComm = re.sub(r"(^|\s)((\w+\.)+\.?)($|\s)", periodHandler, new_modComm, re.IGNORECASE)
+        new_modComm = re.sub(r"(^|\s)((\w+\.)+\.?)($|\s|\w+)", periodHandler, new_modComm, flags=re.IGNORECASE)
+
+        # Special case:  .Tree
+        new_modComm = re.sub(r"\s\.(\w+)", r" . \1", new_modComm)
         # special case: dogs'. or t'.
         modComm = new_modComm.replace("'.", "' .")
 
-    if 5 in steps:# split clitics
+    if 5 in steps:  # split clitics
+        # modComm = re.sub(r"([\w]+)(?=\'ve)|(?=\'ll)|(?=\'re)|(?=\'s)|(?=\'d)|(?=\'m)|(?=\'\s)",
+        #                 lambda pat: pat.group(0) + ' ', modComm, flags=re.I)
+        # modComm = re.sub(r"([\w]+)(?=\'t)|(?=\'T)", lambda pat: pat.group(0)[:-1] + ' ' + pat.group(0)[-1], modComm,
+        #                 flags=re.I)
+        # modComm = modComm.replace('\\', '')
+
         if modComm == "":
             return ""
+
         def citeHandler(matched):
             lst = clitics_lower
             word = matched.group().strip()
@@ -176,13 +203,16 @@ def preproc1(comment, steps=range(1, 11)):
         new_modComm = re.sub(r"(^|\s)(\w*\'\w*)($|\s)", citeHandler, modComm)
         modComm = new_modComm
 
-
-    if 6 in steps:  #tags
-        #We already know that 689 will be together.
+    if 6 in steps:  # tags
+        # We already know that 689 will be together.
+        '''
+        '''
         if modComm == "":
             return ""
+
         if nlp is None:
-            print("warning: trying to load spacy in a wrong place. It would be much slower if it happens a lot of time!")
+            print(
+                "warning: trying to load spacy in a wrong place. It would be much slower if it happens a lot of time!")
             nlp = spacy.load('en', disable=['parser', 'ner'])
         doc = spacy.tokens.Doc(nlp.vocab, words=modComm.split())
         doc = nlp.tagger(doc)
@@ -194,13 +224,18 @@ def preproc1(comment, steps=range(1, 11)):
     if 7 in steps:  # Stop words
         # split to list, remove if in stopwords
         # analysis when it has or not the tags
-        #replace beta/nng or beta/-lrc- or 
-        #start and end with white space or head/end
+        # replace beta/nng or beta/-lrc- or
+        # start and end with white space or head/end
         if modComm == "":
             return ""
-        reStr = r"\b(" + r"(\s|^)" + r"|".join(stopwords) + r"\/\-?\S+\-?" + r"(\s|$)" + r")\b"
+        # pattern = re.compile(r'\b\s(' + r'|'.join(stopwords) + r')\/\b')
+        # modComm = pattern.sub(r' /', modComm)
+        # pattern = re.compile(r"\s/[\w]+(?=\s)")
+        # modComm = pattern.sub(r'', modComm)
+        # re.sub(r'\b\s(' + r'|'.join(stopwords) + r')\/\b', r' /', modComm)
+        reStr = r"(" + r"(\s|^)(" + r"|".join(stopwords) + r")\/\-?\S+\-?" + r"(\s|$)" + r")"
         modComm = re.sub(reStr, " ", modComm, flags=re.IGNORECASE)
-        
+
         '''
         modComm_lst = modComm.split()
         if len(modComm_text) > 0:
@@ -224,16 +259,16 @@ def preproc1(comment, steps=range(1, 11)):
         '''
 
     if 8 in steps:  # lemmazation,
-        #As piazza, 689 would be executed together.
-        #So it must have tags
-        #As we almost lemmazation all words, then it's actually useless to use regex here.
-        #Warning! stopwords may or maynot be removed!
-        
+        # As piazza, 689 would be executed together.
+        # So it must have tags
+        # As we almost lemmazation all words, then it's actually useless to use regex here.
+        # Warning! stopwords may or maynot be removed!
+
         if modComm == "":
             return ""
 
         modComm_lst = modComm.split()
-        new_modComm = []
+        new_modComm_lst = []
         '''
         
         Yes, the stopwords may or may not removed but it won't be reduced.
@@ -246,32 +281,36 @@ def preproc1(comment, steps=range(1, 11)):
             pieces = modComm_lst[i].split("/")
             new_modComm_tag = pieces[-1]
             new_modComm_text = "/".join(pieces[:len(pieces) - 1])
-            while not new_modComm_text == doc[j]:
-                j += 1
-                #if j ends when i not, there would be a critical error!
-            #Now I find the correct place
-            token = doc[j]
-            if token.lemma_[0] == '-' and token.text[0] != '-':  ##curcumstance to keep token
-                new_modComm_lst.append(modComm_lst[i])#It doesn't change at all!
-            elif token.lemma_[0] == token.text[0].lower():
-                new_modComm_lst.append(token.text[j][0] + token.lemma_[j][1:] + "/" + new_modComm_tag)
-                # Now we have word lists lemmaed.
-            else:
-                new_modComm_lst.append(token.lemma_[j] + "/" + new_modComm_tag)
-            j += 1
-
-            if j > len(doc):
+            if j >= len(doc):
                 print("ERROR! j out of bound in step 8. Result bypass!")
                 break
+            while not new_modComm_text == doc[j].text:
+                debugger = doc[j].text
+                j += 1
+                if j >= len(doc):
+                    print("ERROR! j out of bound in step 8. Result bypass!")
+                    break
+                # if j ends when i not, there would be a critical error!
+            # Now I find the correct place
+            token = doc[j]
+            if token.lemma_[0] == '-' and token.text[0] != '-':  ##curcumstance to keep token
+                new_modComm_lst.append(modComm_lst[i])  # It doesn't change at all!
+            # elif token.lemma_[0] == token.text[0].lower():
+            #    new_modComm_lst.append(token.text[0] + token.lemma_[1:] + "/" + new_modComm_tag)
+            # Now we have word lists lemmaed.
+            else:
+                new_modComm_lst.append(token.lemma_ + "/" + new_modComm_tag)
+            j += 1
+
         modComm = " ".join(new_modComm_lst)
 
     if 9 in steps:  # new line between sentences 4.2.4.
-        #print('TODO')  # Mr./NNP Guardian/NNP Council/NNP .../: \n and/CC Supreme/NNP
-        #The code in comment was 4.2.4. However... as 689 together, we can use tags...
+        # print('TODO')  # Mr./NNP Guardian/NNP Council/NNP .../: \n and/CC Supreme/NNP
+        # The code in comment was 4.2.4. However... as 689 together, we can use tags...
         if modComm == "":
             return ""
 
-        modComm = re.sub(r"(\S\/\.)(\s|$)", "\1 \n\2", modComm)
+        modComm = re.sub(r"(\S\/\.)(\s|$)", r"\1 \n\2", modComm)
         '''
         tag_scanner = r"\s*" #Handle tag exists or not
         if len(modComm_lst) == 0:
@@ -305,9 +344,17 @@ def preproc1(comment, steps=range(1, 11)):
         modComm = new_modComm
         '''
     if 10 in steps:  # lowercase
+
         if modComm == "":
             return ""
-        modComm = modComm.lower()
+
+        # modComm = modComm.lower()
+        def helper_rep(matched):
+            # group: something/xx, group0: something/xx group1:something, group2:/xx
+            return matched.group(1).lower() + matched.group(2)
+
+        if 8 not in steps:
+            modComm = re.sub(r"(\S+)(\/\-?\w+\$?\-?)", helper_rep, modComm)
 
     return modComm
 
@@ -332,8 +379,8 @@ def main(args):
             counter = 0
             for line in tqdm(mydata):
                 counter = counter + 1
-                if counter % 100 == 0:
-                    print("file {} counter {}".format(fl, counter))
+                # if counter % 100 == 0:
+                #    print("file {} counter {}".format(fl, counter))
                 j = json.loads(line)
                 newline = {}
                 newline['id'] = j['id']
