@@ -185,12 +185,14 @@ def extract1(comment):
 				feats[14] += 1
 
 			# 18-20 if token
-			if lower_word in BG:
+			if lower_word != "" and lower_word in BG:#I shouldn't have such null string. But who knows if they have.
+				#print(lower_word)
+				#print(BG[lower_word][3])
 				AOAs.append(int(BG[lower_word][3]))
 				IMGs.append(int(BG[lower_word][4]))
 				FAMs.append(int(BG[lower_word][5]))
 			# 24-26
-			if lower_word in RW:
+			if lower_word != "" and lower_word in RW:
 				V.append(float(RW[lower_word][2]))
 				A.append(float(RW[lower_word][5]))
 				D.append(float(RW[lower_word][8]))

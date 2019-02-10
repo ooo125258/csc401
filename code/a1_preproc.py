@@ -233,8 +233,7 @@ def preproc1(comment, steps=range(1, 11)):
 		# pattern = re.compile(r"\s/[\w]+(?=\s)")
 		# modComm = pattern.sub(r'', modComm)
 		# re.sub(r'\b\s(' + r'|'.join(stopwords) + r')\/\b', r' /', modComm)
-		reStr = re.compile(r"\b(" + r"(\s|^)(" + r"|".join(stopwords) + r"(\/\-?\S+\-?)?" + r"(\s|$)" + r")\b",
-		                   flags=re.IGNORECASE)
+		reStr = re.compile(r"\b(" + r"(\s|^)(" + r"|".join(stopwords) + r")(\/\-?\S+\-?)?" + r"(\s|$)" + r")\b", flags=re.IGNORECASE)
 		new_modComm = reStr.sub(" ", modComm)
 		flag = False
 		#Add a flag to minimize the inaccurate regex. I don't know why but it won't remove all stop words at once.

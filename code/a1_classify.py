@@ -42,12 +42,13 @@ def accuracy( C ):
 
 def recall( C ):
     ''' Compute recall given Numpy array confusion matrix C. Returns a list of floating point values '''
-    return [C[k,k] / np.sum(C[k]) for k in range(C.shape[0])]
+    deno = np.sum(C, axis=0)
+    return np.diagonal(C) / np.sum(C, axis=0)
     #print ('TODO')
 
 def precision( C ):
     ''' Compute precision given Numpy array confusion matrix C. Returns a list of floating point values '''
-    return [C[k,k] / np.sum(C[:,k]) for k in range(C.shape[0])]
+    return np.diagonal(C) / np.sum(C, axis=1)
     #print ('TODO')
 
 
@@ -72,7 +73,7 @@ def class31(filename):
     y_test = y_test.astype(int)
     compare_values = np.zeros((5,26))
     compare_values[:,0] = [1,2,3,4,5]
-    #return (X_train, X_test, y_train, y_test, 1)
+    #return (X_train, X_test, y_train, y_test, 5)
     
     for i in range(5):
         print("Method i")
@@ -80,6 +81,8 @@ def class31(filename):
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
         C = confusion_matrix(y_test, y_pred)#, labels = [0,1,2,3]
+        if C.shape[0]!= 4:
+	        C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
         compare_values[i][1] = accuracy(C)
         compare_values[i][2:6] = recall(C)
         compare_values[i][6:10] = precision(C)
@@ -116,7 +119,7 @@ def class32(X_train, X_test, y_train, y_test,iBest):
        y_1k: numPy array, just 1K rows of y_train
    '''
     print('TODO Section 3.2')
-    train_nums = [1000]#, 5000, 10000, 15000, 20000]
+    train_nums = [1000, 5000, 10000, 15000, 20000]
     compare_values = []
     X_1k = None
     y_1k = None
@@ -134,7 +137,9 @@ def class32(X_train, X_test, y_train, y_test,iBest):
         clf = helperSelectClassifier(iBest)
         clf.fit(reduced_X_train, reduced_y_train)
         y_pred = clf.predict(X_test)
-        C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
+        C = confusion_matrix(y_test, y_pred)
+        if C.shape[0] != 4:
+            C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
         compare_values.append(accuracy(C))
 
     print("a1 3.2")
@@ -162,7 +167,7 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
        y_1k: numPy array, just 1K rows of y_train (from task 3.2)
     '''
     #First part
-    ks = [5]#,10, 20, 30, 40, 50]
+    ks = [5,10, 20, 30, 40, 50]
     print('TODO Section 3.3')
     ret = np.zeros((len(ks) + 1, 2))
     csvfile = open("a1_3.3.csv", "w+")
@@ -177,6 +182,7 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     orikFeatsPP = np.zeros((len(ks), np.max(ks)))
 
     for i in range(len(ks)):
+        print("currently, 3.3 part1")
         #code on doc
         #First, we have the 1k training set.
         selector_1k = SelectKBest(f_classif, k=ks[i])
@@ -201,6 +207,7 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
         a133writer.writerow(writeLine)
 
     #Second part: #TODO: modify to more accurate ways later.
+    print("currently, 3.1 part2")
     k = 5
     writeLine = []
     reduced_X_1k = X_1k[:,onekFeatsIdx[0,:5]]
@@ -208,7 +215,9 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     clf = helperSelectClassifier(iBest)
     clf.fit(reduced_X_1k, y_1k)
     y_pred_1k = clf.predict(reduced_X_test_1k)
-    C_1k = confusion_matrix(y_test, y_pred_1k, labels = [0,1,2,3])
+    C_1k = confusion_matrix(y_test, y_pred_1k)
+    if C_1k.shape[0] != 4:
+        C_1k = confusion_matrix(y_test, y_pred_1k, labels = [0,1,2,3])
     writeLine.append(accuracy(C_1k))
 
     #32k training set
@@ -217,7 +226,9 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     clf = helperSelectClassifier(iBest)
     clf.fit(reduced_X_32k, y_train)
     y_pred = clf.predict(reduced_X_test_32k)
-    C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
+    C = confusion_matrix(y_test, y_pred)
+    if C.shape[0] != 4:
+        C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
     writeLine.append(accuracy(C))
     a133writer.writerow(writeLine)
 
@@ -235,14 +246,14 @@ def class34( filename, i ):
        filename : string, the name of the npz file from Task 2
        i: int, the index of the supposed best classifier (from task 3.1)
     '''
-    print("currently, the best classifier would be {}.".format(i+1))
+    print("currently, the best classifier would be {}.".format(i))
     feats = np.load(filename)['arr_0']
     kf = KFold(n_splits=5, random_state=0, shuffle=True)
     X = feats[:,:173]
     y = feats[:,173].astype(int)
-    accu = np.zeros((5,5))#each row: each KFold; each col: each classifier; 
+    accu = np.zeros((5,5))#each row: each KFold; each col: each classifier;
     counter = 0
-    p_values = np.array((4))
+    p_values = np.zeros((4))
     csvfile = open("a1_3.4.csv", "w")
     a134writer = csv.writer(csvfile, delimiter=',')
 
@@ -251,25 +262,28 @@ def class34( filename, i ):
         y_train, y_test = y[train_index], y[test_index]
 
         for idx in range(5):
+            print("currently, 3.4, Fold number {}, {} classification".format(counter, idx + 1))
             clf = helperSelectClassifier(idx + 1)
             clf.fit(X_train, y_train)
             y_pred = clf.predict(X_test)
-            C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
+            C = confusion_matrix(y_test, y_pred)
+            if C.shape[0] != 4:
+                C = confusion_matrix(y_test, y_pred, labels = [0,1,2,3])
             accu[counter][idx] = accuracy(C)
 
-            break#TODO
+            #break#TODO
         counter += 1
-        break#TODO
+        #break#TODO
     #write to csv
     a134writer.writerows(accu)
     #OK, 25 times of classifications are done.
-    a = accu[:,i]
+    a = accu[:,i - 1]
     input_idx = 0
     for idx in range(5):
-        if idx != i:
+        if idx != i - 1:
             b = accu[:,idx]
             S = stats.ttest_rel(a,b)
-            p_values[input_idx] = S
+            p_values[input_idx] = S.pvalue
             input_idx += 1
     a134writer.writerow(p_values)
     csvfile.close()
@@ -287,5 +301,5 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test, iBest = class31(args.input)
     X_1k, y_1k = class32(X_train, X_test, y_train, y_test, iBest)
     class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k)
-    class34(args.input, iBest)
+    class34(args.input, 5)
     print("Classifier done.")
