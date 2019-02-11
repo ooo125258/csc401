@@ -1,1 +1,2 @@
 0.29575,0.3375,0.355,0.35775,0.360375
+The accuracy is following a increasing trend, as the increase of the training size. It seems it's still a underfit result and we need more data to feed the model. Currently, the mapping between features and classes are not clear. Thus, we need more data to train, until a saturation point. (Then it would cause overfit!)
