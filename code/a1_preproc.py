@@ -52,9 +52,9 @@ def init():
 		clitics1001369404_lower = [x.lower() for x in clitics1001369404]
 	
 	if len(stopwords1001369404) == 0:
-		stopwords1001369404_filename = "./stopwords"
+		stopwords1001369404_filename = "./StopWords"
 		if not os.path.isfile(stopwords1001369404_filename):
-			stopwords1001369404_filename = "/u/cs401/Wordlists/stopwords"
+			stopwords1001369404_filename = "/u/cs401/Wordlists/StopWords"
 		with open(stopwords1001369404_filename) as f:
 			for line in f:
 				stopwords1001369404.append(line.rstrip('\n'))
