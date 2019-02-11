@@ -10,51 +10,46 @@ import string
 
 import csv
 
-PRP_1st = None
-PRP_2nd = None
-PRP_3rd = None
-slang = None
-future_tense_verbs = None
-BG = None
-RW = None
+PRP_1st1001369404 = None
+PRP_2nd1001369404 = None
+PRP_3rd1001369404 = None
+slang1001369404 = None
+future_tense_verbs1001369404 = None
+BG1001369404 = None
+RW1001369404 = None
 
 
 def init():
-	global PRP_1st
-	global PRP_2nd
-	global PRP_3rd
-	global future_tense_verbs
-	global slang
-	global BG
-	global RW
-	if PRP_1st is None: PRP_1st = loadtxt("/u/cs401/Wordlists/First-person", comments="#", delimiter="\n", unpack=False,
+	global PRP_1st1001369404
+	global PRP_2nd1001369404
+	global PRP_3rd1001369404
+	global future_tense_verbs1001369404
+	global slang1001369404
+	global BG1001369404
+	global RW1001369404
+	if PRP_1st1001369404 is None: PRP_1st1001369404 = loadtxt("/u/cs401/Wordlists/First-person", comments="#", delimiter="\n", unpack=False,
 	                                      dtype=str)
-	if PRP_2nd is None: PRP_2nd = loadtxt("/u/cs401/Wordlists/Second-person", comments="#", delimiter="\n", unpack=False,
+	if PRP_2nd1001369404 is None: PRP_2nd1001369404 = loadtxt("/u/cs401/Wordlists/Second-person", comments="#", delimiter="\n", unpack=False,
 	                                      dtype=str)
-	if PRP_3rd is None: PRP_3rd = loadtxt("/u/cs401/Wordlists/Third-person", comments="#", delimiter="\n", unpack=False,
+	if PRP_3rd1001369404 is None: PRP_3rd1001369404 = loadtxt("/u/cs401/Wordlists/Third-person", comments="#", delimiter="\n", unpack=False,
 	                                      dtype=str)
-	if slang is None: slang = loadtxt("/u/cs401/Wordlists/Slang", comments="#", delimiter="\n", unpack=False, dtype=str)
+	if slang1001369404 is None: slang1001369404 = loadtxt("/u/cs401/Wordlists/Slang", comments="#", delimiter="\n", unpack=False, dtype=str)
 	
-	# PRP_1st = loadtxt("/u/cs401/Wordlists/First-person", comments="#", delimiter="\n", unpack=False, dtype=str)
-	# PRP_2nd = loadtxt("/u/cs401/Wordlists/Second-person", comments="#", delimiter="\n", unpack=False, dtype=str)
-	# PRP_3rd = loadtxt("/u/cs401/Wordlists/Third-person", comments="#", delimiter="\n", unpack=False, dtype=str)
-	# slang = loadtxt("/u/cs401/Wordlists/Slang", comments="#", delimiter="\n", unpack=False, dtype=str)
-	
-	if future_tense_verbs is None: future_tense_verbs = ["'ll", "will",
+	if future_tense_verbs1001369404 is None: future_tense_verbs1001369404 = ["'ll", "will",
 	                                                     "gonna"]  # The last one is going to VB, consider later
 	# dict for 17+
-	if BG is None:
-		BG = {}
+	if BG1001369404 is None:
+		BG1001369404 = {}
 		with open("BristolNorms+GilhoolyLogie.csv") as BGcsv:
 			reader = csv.reader(BGcsv)
 			for line in reader:
-				BG[line[1]] = line
-	if RW is None:
-		RW = {}
+				BG1001369404[line[1]] = line
+	if RW1001369404 is None:
+		RW1001369404 = {}
 		with open("Ratings_Warriner_et_al.csv") as RWcsv:
 			reader = csv.reader(RWcsv)
 			for line in reader:
-				RW[line[1]] = line
+				RW1001369404[line[1]] = line
 				
 def wordTagSplit(token):
 	format = re.match(r'^(.*)\/(\S+)$', token, re.I)
@@ -135,11 +130,11 @@ def extract1(comment):
 
 			# 1,2,3, 1st/2nd/3rd person pronoun
 			lower_word = word.lower()
-			if lower_word in PRP_1st:
+			if lower_word in PRP_1st1001369404:
 				feats[1] += 1
-			if lower_word in PRP_2nd:
+			if lower_word in PRP_2nd1001369404:
 				feats[2] += 1
-			if lower_word in PRP_3rd:
+			if lower_word in PRP_3rd1001369404:
 				feats[3] += 1
 			# 4, CC
 			if tag == "CC":
@@ -149,7 +144,7 @@ def extract1(comment):
 				feats[5] += 1
 			# 6, Future
 			# going to will be handled in present TODO: related to "will"
-			if lower_word in future_tense_verbs:
+			if lower_word in future_tense_verbs1001369404:
 				feats[6] += 1
 			if (lower_word == "going" or (lower_word == "go" and tag == "VBG")) and i < len(tokens) - 2:
 				# judge for to do
@@ -178,24 +173,24 @@ def extract1(comment):
 			if tag in ["WDT", "WP", "WP$", "WRB"]:
 				feats[12] += 1
 			# 13, slang acronyms
-			if tag in slang:
+			if tag in slang1001369404:
 				feats[13] += 1
 			# 14, words in uppercase
 			if len(word) >= 3 and word.isupper():
 				feats[14] += 1
 
 			# 18-20 if token
-			if lower_word != "" and lower_word in BG:#I shouldn't have such null string. But who knows if they have.
+			if lower_word != "" and lower_word in BG1001369404:#I shouldn't have such null string. But who knows if they have.
 				#print(lower_word)
-				#print(BG[lower_word][3])
-				AOAs.append(int(BG[lower_word][3]))
-				IMGs.append(int(BG[lower_word][4]))
-				FAMs.append(int(BG[lower_word][5]))
+				#print(BG1001369404[lower_word][3])
+				AOAs.append(int(BG1001369404[lower_word][3]))
+				IMGs.append(int(BG1001369404[lower_word][4]))
+				FAMs.append(int(BG1001369404[lower_word][5]))
 			# 24-26
-			if lower_word != "" and lower_word in RW:
-				V.append(float(RW[lower_word][2]))
-				A.append(float(RW[lower_word][5]))
-				D.append(float(RW[lower_word][8]))
+			if lower_word != "" and lower_word in RW1001369404:
+				V.append(float(RW1001369404[lower_word][2]))
+				A.append(float(RW1001369404[lower_word][5]))
+				D.append(float(RW1001369404[lower_word][8]))
 
 			if tag == "xx":
 				print("unknown xx word: {} in sentence {}.".format(tokens[i], sentence))#, file=xx_file)
@@ -278,8 +273,6 @@ def main(args):
 	
 	from tqdm import tqdm
 	for i in tqdm(range(len(data))):
-		# if (i % 100 == 0):
-		#     print("complete: "+ str(i/float(len(data))*100) + "%")
 		ret = extract1(data[i]["body"])
 		feats[i][:29] = ret
 

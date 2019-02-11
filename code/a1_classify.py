@@ -18,15 +18,15 @@ def helperSelectClassifier(iBest):
     #I set random_state as zero for debugging!!
     clf = None
     if iBest == 1:
-        clf = LinearSVC(random_state=0, loss="hinge")
+        clf = LinearSVC(loss="hinge")
     elif iBest == 2:
-        clf = SVC(random_state=0, gamma=2, max_iter=1000)
+        clf = SVC(gamma=2, max_iter=2000)
     elif iBest == 3:
-        clf = RandomForestClassifier(random_state=0, n_estimators=10, max_depth=5)
+        clf = RandomForestClassifier(n_estimators=10, max_depth=5)
     elif iBest == 4:
-        clf = MLPClassifier(random_state=0, alpha=0.05)
+        clf = MLPClassifier(alpha=0.05)
     elif iBest == 5:
-        clf = AdaBoostClassifier(random_state=0)
+        clf = AdaBoostClassifier()
     else:
         print("Critical ERROR! classifier is not identified! You may stop!")
         print("It will continue as LinearSVC, but it might not be the highest!!!")
@@ -41,12 +41,13 @@ def accuracy( C ):
     #print ('TODO')
 
 def recall( C ):
+    #as piazza, we don't care about nan
     ''' Compute recall given Numpy array confusion matrix C. Returns a list of floating point values '''
-    deno = np.sum(C, axis=0)
     return np.diagonal(C) / np.sum(C, axis=0)
     #print ('TODO')
 
 def precision( C ):
+    #as piazza, we don't care about nan
     ''' Compute precision given Numpy array confusion matrix C. Returns a list of floating point values '''
     return np.diagonal(C) / np.sum(C, axis=1)
     #print ('TODO')
@@ -67,7 +68,7 @@ def class31(filename):
     '''
     print('TODO Section 3.1')
     feats = np.load(filename)['arr_0']#To easier to debug, random_state=0. change later
-    X_train, X_test, y_train, y_test = train_test_split(feats[:,:173], feats[:,173], test_size = 0.2, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(feats[:,:173], feats[:,173], test_size = 0.2)
     #Need int value for classifier
     y_train = y_train.astype(int)
     y_test = y_test.astype(int)
@@ -133,6 +134,8 @@ def class32(X_train, X_test, y_train, y_test,iBest):
             y_1k = reduced_y_train
             # Backup values for later use
             np.savez('a32retvalues.npz', name1=X_1k, name2=y_1k)
+            #return X_1k, y_1k
+            
 
         clf = helperSelectClassifier(iBest)
         clf.fit(reduced_X_train, reduced_y_train)
@@ -169,6 +172,7 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
     #First part
     ks = [5,10, 20, 30, 40, 50]
     print('TODO Section 3.3')
+    print("currently, the best classifier would be {}.".format(iBest))
     ret = np.zeros((len(ks) + 1, 2))
     csvfile = open("a1_3.3.csv", "w+")
     a133writer = csv.writer(csvfile, delimiter=',')
@@ -201,11 +205,16 @@ def class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k):
         orikFeatsIdx[i,:ks[i]] = index_32k
         orikFeatsPP[i,:ks[i]] = pp_32k[index_32k]
         #PP is calculated write to csv,
-
-        writeLine.append(ks[i])
-        writeLine.append(pp_32k[index_32k])
+        writeLine = np.insert(pp_32k[index_32k], 0, ks[i])
         a133writer.writerow(writeLine)
-
+    print("3.3 The Features index for 1k:\n")
+    print(onekFeatsIdx)
+    print("3.3 The Features index for 32k:\n")
+    print(orikFeatsIdx)
+    print("3.3 The Features PP for 1k:\n")
+    print(onekFeatsPP)
+    print("3.3 The Features PP for 32k:\n")
+    print(orikFeatsPP)
     #Second part: #TODO: modify to more accurate ways later.
     print("currently, 3.1 part2")
     k = 5
@@ -248,7 +257,7 @@ def class34( filename, i ):
     '''
     print("currently, the best classifier would be {}.".format(i))
     feats = np.load(filename)['arr_0']
-    kf = KFold(n_splits=5, random_state=0, shuffle=True)
+    kf = KFold(n_splits=5, shuffle=True)
     X = feats[:,:173]
     y = feats[:,173].astype(int)
     accu = np.zeros((5,5))#each row: each KFold; each col: each classifier;
@@ -262,7 +271,7 @@ def class34( filename, i ):
         y_train, y_test = y[train_index], y[test_index]
 
         for idx in range(5):
-            print("currently, 3.4, Fold number {}, {} classification".format(counter, idx + 1))
+            print("currently, Part 3.4, Fold number {} in 0-4, classification {} in 1-5".format(counter, idx + 1))
             clf = helperSelectClassifier(idx + 1)
             clf.fit(X_train, y_train)
             y_pred = clf.predict(X_test)
@@ -301,5 +310,5 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test, iBest = class31(args.input)
     X_1k, y_1k = class32(X_train, X_test, y_train, y_test, iBest)
     class33(X_train, X_test, y_train, y_test, iBest, X_1k, y_1k)
-    class34(args.input, 5)
+    class34(args.input, iBest)
     print("Classifier done.")

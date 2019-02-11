@@ -8,69 +8,69 @@ import re
 import spacy
 from tqdm import tqdm
 
-indir = '/u/cs401/A1/data/';
+indir10013694041001369404 = '/u/cs401/A1/data/';
 
-abbrs = []
-abbrs_lower = []
-abbs_withdot = ""
-clitics = []
-clitics_lower = []
-stopwords = []
-pn_abbrs = []
-nlp = spacy.load('en', disable=['parser', 'ner'])
+abbrs1001369404 = []
+abbrs1001369404_lower = []
+abbs_withdot1001369404 = ""
+clitics1001369404 = []
+clitics1001369404_lower = []
+stopwords1001369404 = []
+pn_abbrs1001369404 = []
+nlp1001369404 = spacy.load('en', disable=['parser', 'ner'])
 
 
 def init():
-	global abbrs
-	global abbrs_lower
-	global abbs_withdot
-	global clitics
-	global clitics_lower
-	global stopwords
-	global pn_abbrs
-	global nlp
+	global abbrs1001369404
+	global abbrs1001369404_lower
+	global abbs_withdot1001369404
+	global clitics1001369404
+	global clitics1001369404_lower
+	global stopwords1001369404
+	global pn_abbrs1001369404
+	global nlp1001369404
 	
-	if nlp is None:
-		nlp = spacy.load('en', disable=['parser', 'ner'])
-	if len(abbrs) == 0:
+	if nlp1001369404 is None:
+		nlp1001369404 = spacy.load('en', disable=['parser', 'ner'])
+	if len(abbrs1001369404) == 0:
 		abbr_filename = "./abbrev.english"
 		if not os.path.isfile(abbr_filename):
 			abbr_filename = "/u/cs401/Wordlists/abbrev.english"
 		with open(abbr_filename) as f:
 			for line in f:
-				abbrs.append(line.rstrip('\n'))
+				abbrs1001369404.append(line.rstrip('\n'))
 		
-		abbrs_lower = [x.lower() for x in abbrs]
+		abbrs1001369404_lower = [x.lower() for x in abbrs1001369404]
 	
-	if len(clitics) == 0:
-		clitics_filename = "./clitics"
-		if not os.path.isfile(clitics_filename):
-			clitics_filename = "/u/cs401/Wordlists/clitics"
-		with open(clitics_filename) as f:
+	if len(clitics1001369404) == 0:
+		clitics1001369404_filename = "./clitics"
+		if not os.path.isfile(clitics1001369404_filename):
+			clitics1001369404_filename = "/u/cs401/Wordlists/clitics"
+		with open(clitics1001369404_filename) as f:
 			for line in f:
-				clitics.append(line.rstrip('\n'))
-		clitics_lower = [x.lower() for x in clitics]
+				clitics1001369404.append(line.rstrip('\n'))
+		clitics1001369404_lower = [x.lower() for x in clitics1001369404]
 	
-	if len(stopwords) == 0:
-		stopwords_filename = "./StopWords"
-		if not os.path.isfile(stopwords_filename):
-			stopwords_filename = "/u/cs401/Wordlists/StopWords"
-		with open(stopwords_filename) as f:
+	if len(stopwords1001369404) == 0:
+		stopwords1001369404_filename = "./stopwords"
+		if not os.path.isfile(stopwords1001369404_filename):
+			stopwords1001369404_filename = "/u/cs401/Wordlists/stopwords"
+		with open(stopwords1001369404_filename) as f:
 			for line in f:
-				stopwords.append(line.rstrip('\n'))
-	# stopwords = set(stopwords)
+				stopwords1001369404.append(line.rstrip('\n'))
+	# stopwords1001369404 = set(stopwords1001369404)
 	
-	if len(pn_abbrs) == 0:
-		pn_abbrs_filename = "./pn_abbrev.english"
-		if not os.path.isfile(pn_abbrs_filename):
-			pn_abbrs_filename = "/u/cs401/Wordlists/pn_abbrev.english"
-		with open(pn_abbrs_filename) as f:
+	if len(pn_abbrs1001369404) == 0:
+		pn_abbrs1001369404_filename = "./pn_abbrev.english"
+		if not os.path.isfile(pn_abbrs1001369404_filename):
+			pn_abbrs1001369404_filename = "/u/cs401/Wordlists/pn_abbrev.english"
+		with open(pn_abbrs1001369404_filename) as f:
 			for line in f:
 				add_word = line.rstrip('\n')
-				pn_abbrs.append(add_word)
-				if add_word not in abbrs:
-					abbrs.append(add_word)
-	# pn_abbrs = set(pn_abbrs)
+				pn_abbrs1001369404.append(add_word)
+				if add_word not in abbrs1001369404:
+					abbrs1001369404.append(add_word)
+	# pn_abbrs1001369404 = set(pn_abbrs1001369404)
 
 
 def preproc1(comment, steps=range(1, 11)):
@@ -89,7 +89,7 @@ def preproc1(comment, steps=range(1, 11)):
 	modComm_tags = []
 	modComm_text = []
 	modComm_lemma = []
-	global nlp
+	global nlp1001369404
 	doc = None  # doc is shared in one preproc1
 	
 	if 1 in steps:
@@ -135,8 +135,8 @@ def preproc1(comment, steps=range(1, 11)):
 		if modComm == "":
 			return ""
 		# first, split the abbv seperately, with space. to do it better.
-		# str = abbs_withdot
-		# reStr = r"\b(" + r"|".join(abbrs) + r")\b"
+		# str = abbs_withdot1001369404
+		# reStr = r"\b(" + r"|".join(abbrs1001369404) + r")\b"
 		# reStr = re.sub(r"\.", r"\.", reStr)
 		# restr = re.sub('\\', r"\\", reStr)
 		new_modComm = re.sub(  # Sorry, but when adding \., it will translate to \\. at once.
@@ -156,9 +156,9 @@ def preproc1(comment, steps=range(1, 11)):
 		# But you are sure that if \s\', it must be a quote for reference!
 		new_modComm = re.sub(r"(\]|\)|\})(\W|\$|\.)", r" \1 \2", new_modComm)
 		
-		# Handle the dot problem. If find a word followed by dot, then check if it's a word in abbrs list
+		# Handle the dot problem. If find a word followed by dot, then check if it's a word in abbrs1001369404 list
 		def periodHandler(matched):
-			lst = abbrs_lower
+			lst = abbrs1001369404_lower
 			word = matched.group().strip()
 			if word.lower() in lst:
 				return " " + word + " "
@@ -174,7 +174,7 @@ def preproc1(comment, steps=range(1, 11)):
 		# special case: dogs'. or t'.
 		modComm = new_modComm.replace("'.", "' .")
 	
-	if 5 in steps:  # split clitics
+	if 5 in steps:  # split clitics1001369404
 		# modComm = re.sub(r"([\w]+)(?=\'ve)|(?=\'ll)|(?=\'re)|(?=\'s)|(?=\'d)|(?=\'m)|(?=\'\s)",
 		#                 lambda pat: pat.group(0) + ' ', modComm, flags=re.I)
 		# modComm = re.sub(r"([\w]+)(?=\'t)|(?=\'T)", lambda pat: pat.group(0)[:-1] + ' ' + pat.group(0)[-1], modComm,
@@ -185,7 +185,7 @@ def preproc1(comment, steps=range(1, 11)):
 			return ""
 		
 		def citeHandler(matched):
-			lst = clitics_lower
+			lst = clitics1001369404_lower
 			word = matched.group().strip()
 			word_lower = word.lower()
 			for i in range(len(lst)):
@@ -205,15 +205,15 @@ def preproc1(comment, steps=range(1, 11)):
 		if modComm == "":
 			return ""
 		
-		if nlp is None:
+		if nlp1001369404 is None:
 			print(
 				"warning: trying to load spacy in a wrong place. It would be much slower if it happens a lot of time!")
-			nlp = spacy.load('en', disable=['parser', 'ner'])
-		doc = spacy.tokens.Doc(nlp.vocab, words=modComm.split())
-		doc = nlp.tagger(doc)
+			nlp1001369404 = spacy.load('en', disable=['parser', 'ner'])
+		doc = spacy.tokens.Doc(nlp1001369404.vocab, words=modComm.split())
+		doc = nlp1001369404.tagger(doc)
 		#print([x.text+"/"+x.tag_ for x in doc])
 		document = modComm
-		document = nlp(document)
+		document = nlp1001369404(document)
 		#print([x.text + "/" + x.tag_ for x in document])
 
 		new_modComm_lst = []
@@ -222,18 +222,18 @@ def preproc1(comment, steps=range(1, 11)):
 		modComm = " ".join(new_modComm_lst)
 
 	if 7 in steps:  # Stop words
-		# split to list, remove if in stopwords
+		# split to list, remove if in stopwords1001369404
 		# analysis when it has or not the tags
 		# replace beta/nng or beta/-lrc- or
 		# start and end with white space or head/end
 		if modComm == "":
 			return ""
-		# pattern = re.compile(r'\b\s(' + r'|'.join(stopwords) + r')\/\b')
+		# pattern = re.compile(r'\b\s(' + r'|'.join(stopwords1001369404) + r')\/\b')
 		# modComm = pattern.sub(r' /', modComm)
 		# pattern = re.compile(r"\s/[\w]+(?=\s)")
 		# modComm = pattern.sub(r'', modComm)
-		# re.sub(r'\b\s(' + r'|'.join(stopwords) + r')\/\b', r' /', modComm)
-		reStr = re.compile(r"\b(" + r"(\s|^)(" + r"|".join(stopwords) + r")(\/\-?\S+\-?)?" + r"(\s|$)" + r")\b", flags=re.IGNORECASE)
+		# re.sub(r'\b\s(' + r'|'.join(stopwords1001369404) + r')\/\b', r' /', modComm)
+		reStr = re.compile(r"\b(" + r"(\s|^)(" + r"|".join(stopwords1001369404) + r")(\/\-?\S+\-?)?" + r"(\s|$)" + r")\b", flags=re.IGNORECASE)
 		new_modComm = reStr.sub(" ", modComm)
 		flag = False
 		#Add a flag to minimize the inaccurate regex. I don't know why but it won't remove all stop words at once.
@@ -252,7 +252,7 @@ def preproc1(comment, steps=range(1, 11)):
 			new_modComm_tags = []
 			new_modComm_lemma = []
 			for idx in range(len(modComm_lst)):  # new_modComm_lst, modComm_text, modComm_tags have the same dimension
-				if modComm_text[idx] not in stopwords:
+				if modComm_text[idx] not in stopwords1001369404:
 					new_modComm_lst.append(modComm_lst[idx])
 					new_modComm_text.append(modComm_text[idx])
 					new_modComm_tags.append(modComm_tags[idx])
@@ -261,7 +261,7 @@ def preproc1(comment, steps=range(1, 11)):
 			modComm_tags = new_modComm_tags  # Save tags for later
 			modComm_lemma = new_modComm_lemma
 		else:
-			new_modComm_lst = [x for x in modComm_lst if x.split('/')[0] not in stopwords]
+			new_modComm_lst = [x for x in modComm_lst if x.split('/')[0] not in stopwords1001369404]
 		modComm = " ".join(new_modComm_lst)
 		#print('TODO')
 		'''
@@ -270,7 +270,7 @@ def preproc1(comment, steps=range(1, 11)):
 		# As piazza, 689 would be executed together.
 		# So it must have tags
 		# As we almost lemmazation all words, then it's actually useless to use regex here.
-		# Warning! stopwords may or maynot be removed!
+		# Warning! stopwords1001369404 may or maynot be removed!
 		
 		if modComm == "":
 			return ""
@@ -279,7 +279,7 @@ def preproc1(comment, steps=range(1, 11)):
 		new_modComm_lst = []
 		'''
 		
-		Yes, the stopwords may or may not removed but it won't be reduced.
+		Yes, the stopwords1001369404 may or may not removed but it won't be reduced.
 		If a word happens n times, it will still be n times or zero times.
 		And the order of all words keep the same.
 		So I use the word in modComm, scan from the left to the right
@@ -335,7 +335,7 @@ def preproc1(comment, steps=range(1, 11)):
 			word_lst = word.split()
 			if len(word_lst) != 2:
 				print("Step 9 Error in preprocess: request format: Prof. Rudzicz, actual word: " + word)
-			if word_lst[0].split('/')[0] in pn_abbrs:
+			if word_lst[0].split('/')[0] in pn_abbrs1001369404:
 				return " " + word_lst[0] + " " + word_lst[1]
 			elif ord(word_lst[1]) >=97 and ord(word_lst[1]) <= 122:
 				return " " + word_lst[0] + " " + word_lst[1]
@@ -371,7 +371,7 @@ def preproc1(comment, steps=range(1, 11)):
 
 def main(args):
 	allOutput = []
-	for subdir, dirs, files in os.walk(indir):
+	for subdir, dirs, files in os.walk(indir10013694041001369404):
 		for fl in files:
 			fullFile = os.path.join(subdir, fl)
 			print("Processing " + fullFile)
