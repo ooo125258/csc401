@@ -4,3 +4,4 @@
 0.263625,0.2475,0.326625,0.33125,0.356625
 0.2515,0.24625,0.360375,0.3195,0.36925
 7.334367946638053e-05,3.4881767610410703e-06,0.011840561287682846,0.02752560672399812
+All p values are smaller than 0.005, which is a very strong rejection to the null hypothesis. It means the adaboost is much better than any of other result. Adaboost is done by building a model from the training data, then creating more models that attempts to correct the errors from the previous model. Models are added until the training set is predicted perfectly. As the number of models goes to maximum, the result of Adaboost can go to maximum, which is better than MLP and RF. Although it's weak against outliers and noise, but we remove noise and the training set is not comprehensive so the advantages of others are inconspicuous. The LinearSVC and SVC are restricted in their iterations and time performance so they don’t perform well (And for some of the data they don't converge)

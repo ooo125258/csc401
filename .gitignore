@@ -1,0 +1,68 @@
+
+*.iml
+*.xml
+CSC401 A1 -20190209T070612Z-001/CSC401 A1 /code/a1_classify.py
+CSC401 A1 -20190209T070612Z-001/CSC401 A1 /code/a1_classify.py.docx
+CSC401 A1 -20190209T070612Z-001/CSC401 A1 /code/a1_extractFeatures.py
+CSC401 A1 -20190209T070612Z-001/CSC401 A1 /code/a1_extractFeatures.py.docx
+CSC401 A1 -20190209T070612Z-001/CSC401 A1 /code/a1_extractFeatures.py~
+CSC401 A1 -20190209T070612Z-001/CSC401 A1 /code/a1_preproc.py
+CSC401 A1 -20190209T070612Z-001/CSC401 A1 /code/a1_preproc.py(1).docx
+CSC401 A1 -20190209T070612Z-001/CSC401 A1 /code/a1_preproc.py.docx
+CSC401 A1 -20190209T070612Z-001/CSC401 A1 /code/a1_preproc.py~
+CSC401 A1 -20190209T070612Z-001.zip
+data/Alt
+data/Center
+data/Left
+data/Right
+feats/Alt_feats.dat.npy
+feats/Alt_IDs.txt
+feats/Center_feats.dat.npy
+feats/Center_IDs.txt
+feats/feats.txt
+feats/Left_feats.dat.npy
+feats/Left_IDs.txt
+feats/Right_feats.dat.npy
+feats/Right_IDs.txt
+Wordlists/.~lock.BristolNorms+GilhoolyLogie.csv#
+Wordlists/abbrev.english
+Wordlists/BristolNorms+GilhoolyLogie.csv
+Wordlists/BristolNorms+GilhoolyLogie.xlsx
+Wordlists/clitics
+Wordlists/Conjunct
+Wordlists/femaleFirstNames.txt
+Wordlists/First-person
+Wordlists/lastNames.txt
+Wordlists/maleFirstNames.txt
+Wordlists/pn_abbrev.english
+Wordlists/pn_abbrev.english2
+Wordlists/Ratings_Warriner_et_al.csv
+Wordlists/Saying
+Wordlists/Second-person
+Wordlists/Slang
+Wordlists/Slang2
+Wordlists/StopWords
+Wordlists/Third-person
+code/a1_preproc.py
+code/a1_3.1backup.csv
+code/a1_3.1some.csv
+code/a1_3.2backup.csv
+code/a1_3.3backup.csv
+code/a1_3.4_ensure.csv
+code/a1_3.4backup.csv
+code/a31retvalues.npz
+code/a32retvalues.npz
+code/another_preproc.py
+code/extract_features.py
+code/out_another.json.npz
+code/out_john.json.npz
+code/out_old.json.npz
+code/out_roughfinal.json.npz
+code/out_some.json.npz
+code/out_test.json.npz
+code/preproc_another.json
+code/preproc_john.json
+code/preproc_old.json
+code/preproc_roughfinal.json
+code/preproc_some.json
+code/some_preproc.py
