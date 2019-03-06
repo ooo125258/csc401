@@ -98,7 +98,31 @@ def main(args):
     an (sparse) example.
     """
     AMs = [1000, 10000, 15000, 30000]
+    #Read file:
+    sTask5e = "/u/cs401/A2_SMT/data/Hansard/Testing/Task5.e"
+    sTask5f = "/u/cs401/A2_SMT/data/Hansard/Testing/Task5.f"
+    sTask5googlee = "/u/cs401/A2_SMT/data/Hansard/Testing/Task5.google.e"
+    sData_dir = "/u/cs401/A2_SMT/data/Hansard/Training/"
+    sFn_LM = "fn_LM"
+    try:
+        l2Hansard_eng_tokens = open(sTask5e).read().split('\n')
+    except IOError:
+        print("Warning: following file failed to open: " + fTask5e)
+        l2Hansard_eng_tokens = []
+    try:
+        l2Hansard_fre_tokens = open(sTask5f).read().split('\n')
+    except IOError:
+        print("Warning: following file failed to open: " + fTask5f)
+        l2Hansard_fre_tokens = []
+    try:
+        l2Google_eng_tokens = open(sTask5googlee).read().split('\n')
+    except IOError:
+        print("Warning: following file failed to open: " + fTask5googlee)
+        l2Google_eng_tokens = []
 
+    #Read Lm
+    dLM = _getLM(sData_dir, 'e', sFn_LM)
+    
     ## Write Results to Task5.txt (See e.g. Task5_eg.txt for ideation). ##
 
     
@@ -111,6 +135,10 @@ def main(args):
         
         f.write(f"\n### Evaluating AM model: {AM_names[i]} ### \n")
         # Decode using AM #
+        # Am is the number of iterations. dAM is the dict of AM.
+        #As 25*4*3, the iteration number is 3
+        dAM = align_ibm1(sData_dir, AM, 3, sFn_AM)
+        
         # Eval using 3 N-gram models #
         all_evals = []
         for n in range(1, 4):
