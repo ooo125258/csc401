@@ -1,6 +1,6 @@
 # from lm_train import *
 # from log_prob import *
-from preprocess import *
+from som_preprocess import *
 from math import log
 import os
 import pickle
@@ -46,7 +46,7 @@ def align_ibm1(train_dir, num_sentences, max_iter, fn_AM):
     temp_AM["SENTEND"]["SENTEND"] = 1
     AM = temp_AM
 
-    save_file = open(fn_AM + '.pickle', 'wb')
+    save_file = open(fn_AM + '.pickle', 'wb+')
     pickle.dump(AM, save_file)
     save_file.close()
 
@@ -132,26 +132,27 @@ def initialize(eng, fre):
 
         # Count all relationship from each english word to each french word!
         for j in range(len(eng_words)):
-            if j not in counting:
-                counting[j] = {}
+            if eng_words[j] not in counting:
+                counting[eng_words[j]] = {}
             for k in range(len(fre_words)):
                 # There is a relation for this english word and all french word in the selected sentence
-                if k not in counting[j]:
-                    counting[j][k] = 1
+                if fre_words[k] not in counting[eng_words[j]]:
+                    counting[eng_words[j]][fre_words[k]] = 1
                 else:
-                    counting[j][k] += 1
+                    counting[eng_words[j]][fre_words[k]] += 1
 
     for eng_token in counting:
         AM[eng_token] = {}
         length_fre_tokens_for_this_eng_token = len(counting[eng_token])
-        for fre_token in counting:
-            if length_fre_tokens_for_this_eng_token == 0:
-                # Although I don't think it can be zero, if there is a loop
-                AM[eng_token][fre_token] = 0
-            else:
-                AM[eng_token][fre_token] = 1.0 / length_fre_tokens_for_this_eng_token
+        if length_fre_tokens_for_this_eng_token == 0:
+            # Although I don't think it can be zero, if there is a loop
+            p = 0
+        else:
+            p = 1.0 / length_fre_tokens_for_this_eng_token
+        for fre_token in counting[eng_token]:
+            AM[eng_token][fre_token] = p
 
-        return AM
+    return AM
 
 
 def em_step(AM, eng, fre):
@@ -173,19 +174,22 @@ def em_step(AM, eng, fre):
             tcount[e][f] = 0
 
     # for each sentence pair (F, E) in training corpus:
-    for pair_idx in len(eng):
+    for pair_idx in range(len(eng)):
         # for each unique word f in F:
         f_unique_words = unique_word(fre[pair_idx])
-        for word_f in f_unique_words:
+        for f in f_unique_words:
             denom_c = 0
             e_unique_words = unique_word(eng[pair_idx])
             # for each unique word e in E:
-            for word_e in e_unique_words:
+            for e in e_unique_words:
                 # denom_c += P(f|e) * F.count(f)
-                denom_c += AM[e][f] * f_unique_words[f]
+                denom_c += getAMef(AM, e, f) * f_unique_words[f]
             # for each unique word e in E:
-            for word_e in e_unique_words:
-                value_added = AM[e][f] * f_unique_words[f] * e_unique_words[e] / denom_c
+            for e in e_unique_words:
+                AMef = getAMef(AM, e, f)
+                if AMef == 0:
+                    continue
+                value_added = AMef * f_unique_words[f] * e_unique_words[e] / denom_c
                 # tcount(f, e) += P(f|e) * F.count(f) * E.count(e) / denom_c
                 tcount[e][f] += value_added
                 # total(e) += P(f|e) * F.count(f) * E.count(e) / denom_c
@@ -195,7 +199,12 @@ def em_step(AM, eng, fre):
         # for each f in domain(tcount(:,e)):
         for f in tcount[e]:
             # P(f|e) = tcount(f, e) / total(e)
-            AM[e][f] = tcount[e][f] / total[e]
+            if e not in AM:
+                AM[e] = {}
+            if total[e] == 0:
+                AM[e][f] = 0
+            else:
+                AM[e][f] = tcount[e][f] / total[e]
     return AM
 
 
@@ -219,3 +228,21 @@ def unique_word(sentence):
             counts[word] = 1
 
     return counts
+
+def getAMef(AM, e, f):
+    if len(AM) == 0:
+        return 0
+    if e not in AM:
+        return 0
+    if len(AM[e]) == 0:
+        return 0
+    if f not in AM[e]:
+        return 0
+    return AM[e][f]
+        
+if __name__ == "__main__":
+        data_dir = "/u/cs401/A2_SMT/data/Hansard/Testing/"
+        saved_files = ''
+        fn_AM = os.path.join(saved_files, "am")
+        AM = align_ibm1(data_dir, 1000, 20, fn_AM)
+        print(AM)
