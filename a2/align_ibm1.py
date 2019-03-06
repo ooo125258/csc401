@@ -46,9 +46,8 @@ def align_ibm1(train_dir, num_sentences, max_iter, fn_AM):
     temp_AM["SENTEND"]["SENTEND"] = 1
     AM = temp_AM
 
-    save_file = open(fn_AM + '.pickle', 'wb+')
-    pickle.dump(AM, save_file)
-    save_file.close()
+    with open(fn_AM+'.pickle', 'wb') as handle:
+        pickle.dump(AM, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     return AM
 
