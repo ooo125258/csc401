@@ -16,38 +16,50 @@ def preprocess(in_sentence, language):
     """
     # TODO: Implement Function
 
-    #lower-case and remove extra space
-    modComm = in_sentence.lower().strip()
+    import re
 
-    modComm = re.sub(r'\s+', r' ', modComm)
-    
-    #Code from a1
-    new_modComm = re.sub(  # Sorry, but when adding \., it will translate to \\. at once.
-        r"(\W+)(Ala\.|Ariz\.|Assn\.|Atty\.|Aug\.|Ave\.|Bldg\.|Blvd\.|Calif\.|Capt\.|Cf\.|Ch\.|Co\.|Col\.|Colo\.|Conn\.|Corp\.|DR\.|Dec\.|Dept\.|Dist\.|Dr\.|Drs\.|Ed\.|Eq\.|FEB\.|Feb\.|Fig\.|Figs\.|Fla\.|Ga\.|Gen\.|Gov\.|HON\.|Ill\.|Inc\.|JR\.|Jan\.|Jr\.|Kan\.|Ky\.|La\.|Lt\.|Ltd\.|MR\.|MRS\.|Mar\.|Mass\.|Md\.|Messrs\.|Mich\.|Minn\.|Miss\.|Mmes\.|Mo\.|Mr\.|Mrs\.|Ms\.|Mx\.|Mt\.|NO\.|No\.|Nov\.|Oct\.|Okla\.|Op\.|Ore\.|Pa\.|Pp\.|Prof\.|Prop\.|Rd\.|Ref\.|Rep\.|Reps\.|Rev\.|Rte\.|Sen\.|Sept\.|Sr\.|St\.|Stat\.|Supt\.|Tech\.|Tex\.|Va\.|Vol\.|Wash\.|al\.|av\.|ave\.|ca\.|cc\.|chap\.|cm\.|cu\.|dia\.|dr\.|eqn\.|etc\.|fig\.|figs\.|ft\.|gm\.|hr\.|in\.|kc\.|lb\.|lbs\.|mg\.|ml\.|mm\.|mv\.|nw\.|oz\.|pl\.|pp\.|sec\.|sq\.|st\.|vs\.|yr\.|i\.e\.|e\.g\.)",
-        r"\1 \2 ", modComm, flags=re.IGNORECASE)
-    # Dot here is a problem. The one dot situation will be handled later. For all "..." and "?.?" will be handled
-    # It's ridiculous, but ... has higher priority.
-    new_modComm = re.sub(r"(\.\.\.)(\w|\s|$)", r" \1 \2", new_modComm)
-    new_modComm = re.sub(
-        r"(\w|\s\^)(\.\.\.|[\!\#\$\%\&\\\(\)\*\+\,\-\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~\.\']{2,}|[\!\#\$\%\&\\\(\)\*\+\,\-\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~])(\w|\s|$)",
-        r"\1 \2 \3", new_modComm)
-    # Special operation for brackets
-    new_modComm = re.sub(r"(\W|\^)([\[\(\{\'\"])", r"\1 \2 ", new_modComm)
-    # quote is a problem. when \w+\', you don't know if it's person's or the player'FLASH' or sth.
-    # But you are sure that if \s\', it must be a quote for reference!
-    new_modComm = re.sub(r"(\]|\)|\})(\W|\$|\.)", r" \1 \2", new_modComm)
+    SENT_START = "SENTSTART"
+    SENT_END = "SENTEND"
 
-    # Handle the dot problem. If find a word followed by dot, then check if it's a word in abbrs1001369404 list
-    def periodHandler(matched):
-        lst = abbrs1001369404_lower
-        word = matched.group().strip()
-        if word.lower() in lst:
-            return " " + word + " "
-        else:  # There is such a situation: apple.Tree e.g..Tree apple.E.g. So I choose the capital to be the identifier.
-            return " " + word.replace(".", " . ")
+    # send everything to lowercase as well
+    in_sentence = in_sentence.lower()
+    out_sentence = re.sub(r"([;,\(\)\-\+<>\'\"])", r" \1 ", in_sentence)
 
-    # e.g.. , e.g. something, etc. something, something.
-    # Another situation is something.\nsomething, such that it's connected!
-    new_modComm = re.sub(r"(^|\s)((\w+\.)+\.?)($|\s|\w+)", periodHandler, new_modComm, flags=re.IGNORECASE)
+
+
+    out_sentence = re.sub(r"([\.\!\?]+)$", r" \1 ", out_sentence)
+    out_sentence = "{} {} {}".format(SENT_START,out_sentence, SENT_END)
+
+    if language != "f":
+
+        # sentence final punctuation: we only want to separate out [!.] etc at the VERY end!
+        # 
+
+
+        #
+
+        return out_sentence
+
+
+
+
+    # separate leading l
+    # thankfully, we can do all things at once! that is, there are no overlapping rules to apply
+    #  we can do some replaces, using the groups, or we can do re.sub as well. (replace based on group)
+    # we can also pass in a function as well
+
+    import re
+
+    out_sentence = re.sub("\b(l')",r"\1 ", out_sentence)
+
+    # still need to add spaces to all punctuations as well
+
+    out_sentence = re.sub("\b([cjt]')",r"\1 ", out_sentence)
+    out_sentence = re.sub("\b(qu')",r"\1 ", out_sentence) #should we force a space here as well (checking that qu is not part of anything)?
+    out_sentence = re.sub("'(on)",r" \1", out_sentence)
+
 
     return out_sentence
+
+
+print(preprocess("l'homme; l'Afrique, l'allemagne, 3-4 je t'aime qu'on qu'il puisqu'on qu'on lorsqu'il!!!!", "f"))

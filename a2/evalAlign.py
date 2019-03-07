@@ -3,6 +3,8 @@
 
 import argparse
 import _pickle as pickle
+import math
+import numpy as np
 
 import decode
 from align_ibm1 import *
@@ -72,6 +74,7 @@ def _getAM(data_dir, num_sent, max_iter, fn_AM, use_cached=True):
 
 def _get_BLEU_scores(eng_decoded, eng, google_refs, n):
     """
+    Yes, I calculate TRUE blue score here!
     Parameters
     ----------
     eng_decoded : an array of decoded sentences
@@ -83,9 +86,50 @@ def _get_BLEU_scores(eng_decoded, eng, google_refs, n):
     -------
     An array of evaluation (BLEU) scores for the sentences
     """
-    return [BLEU_score(eng_decoded[i], [eng[i], google_refs[i]], n) for i in range(len(eng_decoded))]
-    #pass
-   
+    #Warning! you need to fully debug what happened!
+    lflRet = []
+    for i in range(len(eng_decoded)):
+        #BLEU_score will only return the p_n, when false
+        lPs = np.zeros(n)
+        iCandidate_tokens_len = len(eng_decoded[i].split()) - 2
+        lsReferences = [eng[i], google_refs[i]]
+        brevity_val = brevity(iCandidate_tokens_len, lsReferences)
+        for j in range(n):
+            lPs[j] = BLEU_score(eng_decoded[i], lsReferences, j + 1)
+            #Warning, we assume it starts at STENSTART and end in STENEND.
+        flScore = brevity_val * math.pow(np.prod(lPs), 1.0 / n)
+        lflRet.append(flScore)
+    return lflRet
+    
+def _get_BLEU_score(eng_decoded, eng, google_refs, n):
+    """
+    Yes, I calculate TRUE blue score here!
+    Parameters
+    ----------
+    eng_decoded : str decoded sentence
+    eng         : str of reference handsard
+    google_refs : str of reference google translated sentence
+    n           : the 'n' in the n-gram model being used
+
+    Returns
+    -------
+    evaluation (BLEU) score for the sentences
+    """
+    #Warning! you need to fully debug what happened!
+    lflRet = []
+    
+    #BLEU_score will only return the p_n, when false
+    lPs = np.zeros(n)
+    iCandidate_tokens_len = len(eng_decoded.split()) - 2
+    lsReferences = [eng, google_refs]
+    brevity_val = brevity(iCandidate_tokens_len, lsReferences)
+    for j in range(n):
+        lPs[j] = BLEU_score(eng_decoded, lsReferences, j + 1)
+        #Warning, we assume it starts at STENSTART and end in STENEND.
+    flScore = brevity_val * math.pow(np.prod(lPs), 1.0 / n)
+    #lflRet.append(flScore)
+    
+    return flScore
 
 def main(args):
     """
@@ -131,37 +175,66 @@ def main(args):
     f.write(discussion) 
     f.write("\n\n")
     f.write("-" * 10 + "Evaluation START" + "-" * 10 + "\n")
-
+    result = np.zeros((12,25)) #i * 3 + n, 25
     for i, AM in enumerate(AMs):
-        
-        f.write(f"\n### Evaluating AM model: {AM_names[i]} ### \n")
+        print("\n### Evaluating AM model: {} ### \n".format(AMs[i]), file=f)
         # Decode using AM #
         # Am is the number of iterations. dAM is the dict of AM.
         #As 25*4*3, the iteration number is 3
         dAM = align_ibm1(sData_dir, AM, 3, sFn_AM)
-        #25 sentences:
-        for i in range(25):
-            lSent_prep_fre = preprocess(lHansard_fre[i], 'f')
+        #25 sentences: 25 * each sentence, pre-handle first, to avoid extra preprocesses
+        lsSent_prep_fre = []
+        llDecoded_fre = []
+        lsHanzard_prep_ref_eng = []
+        lsGoogle_prep_ref_eng = []
+        for sent_idx in range(25):
+            sSent_prep_fre = preprocess(lHansard_fre[sent_idx], 'f')
+            lsSent_prep_fre.append(sSent_prep_fre)
             # Eval using 3 N-gram models #
             all_evals = []
-            for n in range(1, 4):
-                lDecoded_fre = decode(lSent_prep_fre, dLM, dAM)
-                sHanzard_prep_ref_eng = preprocess(lHansard_eng[i], 'e')
-                sGoogle_prep_ref_eng = preprocess(lGoogle_eng[i], 'e')
-                                
-                f.write(f"\nBLEU scores with N-gram (n) = {n}: ")
-                evals = _get_BLEU_scores(lDecoded_fre, [sHanzard_prep_ref_eng, sGoogle_prep_ref_eng], n)
-                for v in evals:
-                    f.write(f"\t{v:1.4f}")
-                all_evals.append(evals)
-
+            llDecoded_fre.append(decode.decode(sSent_prep_fre, dLM, dAM))
+            lsHanzard_prep_ref_eng.append(preprocess(lHansard_eng[sent_idx], 'e'))
+            lsGoogle_prep_ref_eng.append(preprocess(lGoogle_eng[sent_idx], 'e'))
+            
+        for n in range(1, 4):
+            f.write(f"\nBLEU scores with N-gram (n) = {n}: ")
+            #for sent_idx in range(25):
+            evals = _get_BLEU_scores(llDecoded_fre, lsHanzard_prep_ref_eng, lsGoogle_prep_ref_eng, n)
+            for v in evals:
+                f.write(f"\t{v:1.4f}")
+            all_evals.append(evals)
+        
         f.write("\n\n")
-
+    #print(result, file=f)
+    f.write("\n\n")
     f.write("-" * 10 + "Evaluation END" + "-" * 10 + "\n")
     f.close()
     
     pass
 
+def break_references(references):
+    '''
+    break each reference to piece, remove the STEN
+    '''
+def brevity(iCandidate_tokens_len, references):
+    '''
+    
+    :param iCandidate_tokens_len: the length of candidate tokens
+    :param references: [hanzard, google]
+    :return: float, brevity
+    '''
+    brevity_val = 0
+    #Warning! We assume it's embedded by STEN!
+    sReal_ref = [" ".join(ref.split()[1:-1]) for ref in references]
+    #Find the nearest length
+    liLen_ref = [len(sReal_ref[i]) for i in range(len(sReal_ref))]
+    #https:stackoverflow.com/questions/9706041
+    iR_pos = min(range(len(liLen_ref)), key=lambda i : abs(liLen_ref[i] - iCandidate_tokens_len))
+    if liLen_ref[iR_pos] <= iCandidate_tokens_len:#ri<ci
+        brevity_val = 1 
+    else: #exp(1-ri/ci)
+        brevity_val = math.exp(1 - liLen_ref[iR_pos] / iCandidate_tokens_len)
+    return brevity_val 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Use parser for debugging if needed")

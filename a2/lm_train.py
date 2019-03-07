@@ -28,8 +28,53 @@ def lm_train(data_dir, language, fn_LM):
 	
 	# TODO: Implement Function
 
+    # get all the files in the data_dir, according to the language
+    # we can use a glob.glob, or we can recursively walk through the tree and get everything
+
+    import os
+    language_model = {"uni": {} , "bi": {}}
+    # could also be:
+    # language_model = {"uni": defaultdict(int) , "bi": {}}
+
+    for root, dirs, files in os.walk(data_dir):
+        for file in files:
+            if file.endswith(".{}".format(language)):
+                with open(os.path.join(root, file)) as read_file:
+                    for line in read_file:
+                        line = preprocess(line, language)
+                        tokens = line.split()
+                        prev_word = None
+
+                        for index,token in enumerate(tokens):
+                        #     we could make a safe_add function
+                            if token in language_model["uni"]:  #wecould also construct from the ground up as well (i.e. bottom up)
+                                language_model["uni"][token] +=1
+                            else:
+                                language_model["uni"][token] = 1
+
+                        # get the next token as well...
+
+                        #     now, check it for the bi dict
+                            if prev_word is not None:
+                                if prev_word in language_model["bi"]:  # wecould also construct from the ground up as well (i.e. bottom up)
+                                    if token in language_model["bi"][prev_word]:
+                                        language_model["bi"][prev_word][token] +=1
+                                    else:
+                                        language_model["bi"][prev_word][token] = 1
+                                else:
+                                    language_model["bi"][prev_word] = {token: 1}
+                            prev_word = token
+
+
+
+
+                        #         we could also look at the previous token
+
+    print(language_model)
     #Save Model
     with open(fn_LM+'.pickle', 'wb') as handle:
         pickle.dump(language_model, handle, protocol=pickle.HIGHEST_PROTOCOL)
         
     return language_model
+
+lm_train("/u/cs401/A2_SMT/data/Toy/","e", "eee")

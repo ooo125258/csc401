@@ -39,7 +39,7 @@ def align_ibm1(train_dir, num_sentences, max_iter, fn_AM):
     # for a number of iterations:
     temp_AM = AM
     for i in range(max_iter):
-        temp_AM = em_step(AM, training_data["eng"], training_data["fre"])
+        temp_AM = em_step(AM, training_data[0], training_data[1])
     temp_AM["SENTSTART"] = {}
     temp_AM["SENTSTART"]["SENTSTART"] = 1
     temp_AM["SENTEND"] = {}
@@ -126,24 +126,22 @@ def initialize(eng, fre):
     AM = {}
 
     for i in range(len(eng)):
-        eng_words = eng[i].split()
-        fre_words = fre[i].split()
-
+        
         # Count all relationship from each english word to each french word!
-        for j in range(len(eng_words)):
+        for j in range(len(eng[i])):
             # remove these two
-            if eng_words[j] == "SENTSTART" or eng_words[j] == "SENTEND":
+            if eng[i][j] == "SENTSTART" or eng[i][j] == "SENTEND":
                 continue
-            if eng_words[j] not in counting:
-                counting[eng_words[j]] = {}
-            for k in range(len(fre_words)):
+            if eng[i][j] not in counting:
+                counting[eng[i][j]] = {}
+            for k in range(len(fre[i])):
                 # There is a relation for this english word and all french word in the selected sentence
-                if fre_words[j] == "SENTSTART" or fre_words[j] == "SENTEND":
+                if fre[i][k] == "SENTSTART" or fre[i][k] == "SENTEND":
                     continue
-                if fre_words[k] not in counting[eng_words[j]]:
-                    counting[eng_words[j]][fre_words[k]] = 1
+                if fre[i][k] not in counting[eng[i][j]]:
+                    counting[eng[i][j]][fre[i][k]] = 1
                 else:
-                    counting[eng_words[j]][fre_words[k]] += 1
+                    counting[eng[i][j]][fre[i][k]] += 1
 
     for eng_token in counting:
         AM[eng_token] = {}
@@ -218,7 +216,7 @@ def unique_word(sentence):
     :param sentence: string. a sentence
     :return: dict count{word: #appearance}
     '''
-    tokens = sentence.split()
+    tokens = sentence  # .split() for already broken
     # remove duplicate by sets!
     # return list(set(tokens))
 
