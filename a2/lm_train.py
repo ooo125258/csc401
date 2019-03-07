@@ -2,7 +2,7 @@ from preprocess import *
 import pickle
 import os
 import re
-
+from tqdm import tqdm
 def lm_train(data_dir, language, fn_LM):
     """
 	This function reads data from data_dir, computes unigram and bigram counts,
@@ -30,12 +30,12 @@ def lm_train(data_dir, language, fn_LM):
 	# TODO: Implement Function
     LM = {'uni':{}, 'bi':{}}
     for root, dirs, files in os.walk(data_dir):
-        for file in files:
+        for file in tqdm(files):
             if not (len(file) > 2 and file[-1] == language and file[-2] == '.'):
                 continue
             fDatafile = open(os.path.join(root, file), "r")
-            sLine = fDatafile.readline()
-            while sLine:
+            lsLines = fDatafile.readlines()
+            for sLine in tqdm(lsLines):
                 sPre_proc = preprocess(sLine, language)
                 lTokens = sPre_proc.split()
                 #unigram
@@ -53,6 +53,7 @@ def lm_train(data_dir, language, fn_LM):
                         LM['bi'][lTokens[i]][lTokens[i + 1]] = 1
                     else:
                         LM['bi'][lTokens[i]][lTokens[i + 1]] += 1
+                sLine = fDatafile.readline()
     language_model = LM                
     #Save Model
     with open(fn_LM+'.pickle', 'wb') as handle:

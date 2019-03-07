@@ -256,5 +256,5 @@ if __name__ == "__main__":
     data_dir = "/u/cs401/A2_SMT/data/Hansard/Training/"
     saved_files = ''
     fn_AM = os.path.join(saved_files, "mine_fn_AM")
-    AM = align_ibm1(data_dir, 1000, 20, fn_AM)
+    AM = align_ibm1(data_dir, 1000, 10, fn_AM)
     print(AM)
