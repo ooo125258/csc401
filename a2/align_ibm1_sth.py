@@ -135,7 +135,6 @@ def initialize(eng, fre):
         for eword in eng[sent].split():
             if eword not in init:
                 init[eword] = {}
-2
             for fword in fre[sent].split():
                 init[eword][fword] = 1 / e_lens[eword]
 
@@ -163,8 +162,8 @@ def unique_words(sentence):
 
 if __name__ == "__main__":
 
-    data_dir = '/data/Hansard/Training/'
-    saved_files = '/'
-    fn_AM = '{}/am'.format(saved_files)
-    AM = align_ibm1(data_dir, 1000, 20, fn_AM)
+    data_dir = '/u/cs401/A2_SMT/data/Hansard/Training/'
+    saved_files = ''
+    fn_AM = '{}sth_fn_AM'.format(saved_files)
+    AM = align_ibm1(data_dir, 1000, 3, fn_AM)
     print(AM)

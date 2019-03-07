@@ -171,3 +171,11 @@ def em_step(AM, eng, fre):
     for eng_word in total_domain:
         for fre_word in tcount_domain[eng_word]:
             AM[eng_word][fre_word] = tcount_domain[eng_word][fre_word]/ float(total_domain[eng_word])
+            
+if __name__ == "__main__":
+
+    data_dir = '/u/cs401/A2_SMT/data/Hansard/Training/'
+    saved_files = ''
+    fn_AM = '{}yuv_fn_AM'.format(saved_files)
+    AM = align_ibm1(data_dir, 1000, 3, fn_AM)
+    print(AM)

@@ -72,7 +72,7 @@ def read_hansard(train_dir, num_sentences):
     # TODO
     counter = 0
     training_set = {'eng': [], 'fre': []}
-    for root, dirs, files in os.walk(train_dir, topdown=False):
+    for root, dirs, files in os.walk(train_dir):
         for file in files:
             if not (len(file) > 2 and file[-1] == 'e' and file[-2] == '.'):  # .e
                 continue
@@ -121,11 +121,11 @@ def initialize(eng, fre):
     if len(eng) != len(fre):
         print("Function initialize: \
         unbalanced eng and fre len: {} and {}".format(len(eng), len(fre)))
-        return {}
+        
     counting = {}
     AM = {}
-
-    for i in range(len(eng)):
+    len_used = min(len(eng), len(fre))
+    for i in range(len_used):
         
         # Count all relationship from each english word to each french word!
         for j in range(len(eng[i])):
@@ -243,8 +243,8 @@ def getAMef(AM, e, f):
     return AM[e][f]
         
 if __name__ == "__main__":
-        data_dir = "/u/cs401/A2_SMT/data/Hansard/Testing/"
+        data_dir = "/u/cs401/A2_SMT/data/Hansard/Training/"
         saved_files = ''
-        fn_AM = os.path.join(saved_files, "am")
+        fn_AM = os.path.join(saved_files, "mine_fn_AM")
         AM = align_ibm1(data_dir, 1000, 20, fn_AM)
         print(AM)
