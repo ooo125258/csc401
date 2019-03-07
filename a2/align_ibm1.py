@@ -27,14 +27,14 @@ def align_ibm1(train_dir, num_sentences, max_iter, fn_AM):
 			LM['house']['maison'] = 0.5
 	"""
     AM = {}
-
+    
     # Read training data
     training_data = read_hansard(train_dir, num_sentences)
-
+    
     # Initialize AM uniformly
     # initialize P(f | e)
     AM = initialize(training_data[0], training_data[1])
-
+    
     # Iterate between E and M steps
     # for a number of iterations:
     temp_AM = AM
@@ -45,10 +45,10 @@ def align_ibm1(train_dir, num_sentences, max_iter, fn_AM):
     temp_AM["SENTEND"] = {}
     temp_AM["SENTEND"]["SENTEND"] = 1
     AM = temp_AM
-
-    with open(fn_AM+'.pickle', 'wb') as handle:
+    
+    with open(fn_AM + '.pickle', 'wb') as handle:
         pickle.dump(AM, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
+    
     return AM
 
 
@@ -76,7 +76,7 @@ def read_hansard(train_dir, num_sentences):
         for file in files:
             if not (len(file) > 2 and file[-1] == 'e' and file[-2] == '.'):  # .e
                 continue
-
+            
             e_fullName = os.path.join(train_dir, file)
             f_fullName = e_fullName[:-1] + 'f'
             if not os.path.exists(f_fullName):
@@ -84,17 +84,17 @@ def read_hansard(train_dir, num_sentences):
                 continue
             e_file = open(e_fullName)
             f_file = open(f_fullName)
-
+            
             e_readLine = e_file.readline()
             f_readLine = f_file.readline()
-
+            
             while e_readLine:  # "" is false directly
                 if not f_readLine:
                     continue
                 training_set['eng'].append(preprocess(e_readLine, 'e').split())
                 training_set['fre'].append(preprocess(f_readLine, 'f').split())
                 counter += 1
-
+                
                 if counter >= num_sentences:
                     # The time is now
                     e_file.close()
@@ -115,13 +115,13 @@ def initialize(eng, fre):
     :param fre: a list of french sentences
     :return: dict AM{eng_token:{fre_token:am_value}}
     '''
-
+    
     # TODO
     # check inbalance - although it's impossible
     if len(eng) != len(fre):
         print("Function initialize: \
         unbalanced eng and fre len: {} and {}".format(len(eng), len(fre)))
-        
+    
     counting = {}
     AM = {}
     len_used = min(len(eng), len(fre))
@@ -142,7 +142,7 @@ def initialize(eng, fre):
                     counting[eng[i][j]][fre[i][k]] = 1
                 else:
                     counting[eng[i][j]][fre[i][k]] += 1
-
+    
     for eng_token in counting:
         AM[eng_token] = {}
         length_fre_tokens_for_this_eng_token = len(counting[eng_token])
@@ -153,7 +153,7 @@ def initialize(eng, fre):
             p = 1.0 / length_fre_tokens_for_this_eng_token
         for fre_token in counting[eng_token]:
             AM[eng_token][fre_token] = p
-
+    
     return AM
 
 
@@ -163,10 +163,10 @@ def em_step(AM, eng, fre):
 	Follows the pseudo-code given in the tutorial slides.
 	"""
     # TODO
-
+    
     tcount = {}
     total = {}
-
+    
     for e in AM:
         # set total(e) to 0 for all e
         total[e] = 0
@@ -174,21 +174,29 @@ def em_step(AM, eng, fre):
         for f in AM[e]:
             # set tcount(f, e) to 0 for all f, e
             tcount[e][f] = 0
-
+    
     # for each sentence pair (F, E) in training corpus:
     for pair_idx in range(len(eng)):
         # for each unique word f in F:
         f_unique_words = unique_word(fre[pair_idx])
         for f in f_unique_words:
+            if f == "SENTSTART" or f == "SENTEND":
+                continue
             denom_c = 0
             e_unique_words = unique_word(eng[pair_idx])
             # for each unique word e in E:
             for e in e_unique_words:
-                # denom_c += P(f|e) * F.count(f)
-                denom_c += getAMef(AM, e, f) * f_unique_words[f]
+                if e == "SENTSTART" or e == "SENTEND":
+                    continue
+                else:
+                    # denom_c += P(f|e) * F.count(f)
+                    denom_c += getAMef(AM, e, f) * f_unique_words[f]
             # for each unique word e in E:
             for e in e_unique_words:
-                AMef = getAMef(AM, e, f)
+                if e == "SENTSTART" or e == "SENTEND":
+                    continue
+                else:
+                    AMef = getAMef(AM, e, f)
                 if AMef == 0:
                     continue
                 value_added = AMef * f_unique_words[f] * e_unique_words[e] / denom_c
@@ -219,7 +227,7 @@ def unique_word(sentence):
     tokens = sentence  # .split() for already broken
     # remove duplicate by sets!
     # return list(set(tokens))
-
+    
     # return a dict. The unique words are token and the times of appearance is value
     # https://www.w3resource.com/python-exercises/string/python-data-type-string-exercise-12.php
     counts = {}
@@ -228,8 +236,9 @@ def unique_word(sentence):
             counts[word] += 1
         else:
             counts[word] = 1
-
+    
     return counts
+
 
 def getAMef(AM, e, f):
     if len(AM) == 0:
@@ -241,10 +250,11 @@ def getAMef(AM, e, f):
     if f not in AM[e]:
         return 0
     return AM[e][f]
-        
+
+
 if __name__ == "__main__":
-        data_dir = "/u/cs401/A2_SMT/data/Hansard/Training/"
-        saved_files = ''
-        fn_AM = os.path.join(saved_files, "mine_fn_AM")
-        AM = align_ibm1(data_dir, 1000, 20, fn_AM)
-        print(AM)
+    data_dir = "/u/cs401/A2_SMT/data/Hansard/Training/"
+    saved_files = ''
+    fn_AM = os.path.join(saved_files, "mine_fn_AM")
+    AM = align_ibm1(data_dir, 1000, 20, fn_AM)
+    print(AM)
