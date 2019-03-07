@@ -1,6 +1,7 @@
 from preprocess import *
 import pickle
 import os
+import re
 
 def lm_train(data_dir, language, fn_LM):
     """
@@ -27,54 +28,46 @@ def lm_train(data_dir, language, fn_LM):
     """
 	
 	# TODO: Implement Function
-
-    # get all the files in the data_dir, according to the language
-    # we can use a glob.glob, or we can recursively walk through the tree and get everything
-
-    import os
-    language_model = {"uni": {} , "bi": {}}
-    # could also be:
-    # language_model = {"uni": defaultdict(int) , "bi": {}}
-
+    LM = {'uni':{}, 'bi':{}}
     for root, dirs, files in os.walk(data_dir):
         for file in files:
-            if file.endswith(".{}".format(language)):
-                with open(os.path.join(root, file)) as read_file:
-                    for line in read_file:
-                        line = preprocess(line, language)
-                        tokens = line.split()
-                        prev_word = None
-
-                        for index,token in enumerate(tokens):
-                        #     we could make a safe_add function
-                            if token in language_model["uni"]:  #wecould also construct from the ground up as well (i.e. bottom up)
-                                language_model["uni"][token] +=1
-                            else:
-                                language_model["uni"][token] = 1
-
-                        # get the next token as well...
-
-                        #     now, check it for the bi dict
-                            if prev_word is not None:
-                                if prev_word in language_model["bi"]:  # wecould also construct from the ground up as well (i.e. bottom up)
-                                    if token in language_model["bi"][prev_word]:
-                                        language_model["bi"][prev_word][token] +=1
-                                    else:
-                                        language_model["bi"][prev_word][token] = 1
-                                else:
-                                    language_model["bi"][prev_word] = {token: 1}
-                            prev_word = token
-
-
-
-
-                        #         we could also look at the previous token
-
-    print(language_model)
+            if not (len(file) > 2 and file[-1] == language and file[-2] == '.'):
+                continue
+            fDatafile = open(os.path.join(root, file), "r")
+            sLine = fDatafile.readline()
+            while sLine:
+                sPre_proc = preprocess(sLine, language)
+                lTokens = sPre_proc.split()
+                #unigram
+                for i in range(len(lTokens)):
+                    if lTokens[i] in LM['uni']:
+                        LM['uni'][lTokens[i]] += 1
+                    else:
+                        LM['uni'][lTokens[i]] = 1
+                #bigram
+                    if i + 1 >= len(lTokens):
+                        continue
+                    if lTokens[i] not in LM['bi']:
+                        LM['bi'][lTokens[i]] = {lTokens[i + 1] : 1}
+                    elif lTokens[i + 1] not in LM['bi'][lTokens[i]]:
+                        LM['bi'][lTokens[i]][lTokens[i + 1]] = 1
+                    else:
+                        LM['bi'][lTokens[i]][lTokens[i + 1]] += 1
+    language_model = LM                
     #Save Model
     with open(fn_LM+'.pickle', 'wb') as handle:
         pickle.dump(language_model, handle, protocol=pickle.HIGHEST_PROTOCOL)
         
     return language_model
 
-lm_train("/u/cs401/A2_SMT/data/Toy/","e", "eee")
+if __name__ == "__main__":
+    #lm_train(data_dir, language, fn_LM)
+    data_dir = "/u/cs401/A2_SMT/data/Hansard/Training/"
+    saved_files = '/h/u15/c4/00/sunchuan/csc401/a2/'
+    fn_LMe = os.path.join(saved_files, "LMe")
+    fn_LMf = os.path.join(saved_files, "LMf")
+    lme = lm_train(data_dir, 'e', fn_LMe)
+    lmf = lm_train(data_dir, 'f', fn_LMf)
+    print(lme)
+    print("\n================================================\n")
+    print(lmf)

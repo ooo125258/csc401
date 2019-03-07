@@ -180,8 +180,8 @@ def main(args):
         print("\n### Evaluating AM model: {} ### \n".format(AMs[i]), file=f)
         # Decode using AM #
         # Am is the number of iterations. dAM is the dict of AM.
-        #As 25*4*3, the iteration number is 3
-        dAM = align_ibm1(sData_dir, AM, 3, sFn_AM)
+        #As 25*4*3, the iteration number is 10 #TODO: test this value
+        dAM = align_ibm1(sData_dir, AM, 10, sFn_AM)
         #25 sentences: 25 * each sentence, pre-handle first, to avoid extra preprocesses
         lsSent_prep_fre = []
         llDecoded_fre = []
