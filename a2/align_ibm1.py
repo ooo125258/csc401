@@ -33,7 +33,7 @@ def align_ibm1(train_dir, num_sentences, max_iter, fn_AM):
 
     # Initialize AM uniformly
     # initialize P(f | e)
-    AM = initialize(training_data["eng"], training_data["fre"])
+    AM = initialize(training_data[0], training_data[1])
 
     # Iterate between E and M steps
     # for a number of iterations:
@@ -63,7 +63,7 @@ def read_hansard(train_dir, num_sentences):
 	num_sentences : (int) the maximum number of training sentences to consider
 	
 	Return:
-	    training data: {'eng':[], 'fre':[]}
+	    (eng, fre) when each of them is a list of list of pre-processed eng or fre words in sentences of the train_dir
 	Make sure to preprocess!
 	Remember that the i^th line in fubar.e corresponds to the i^th line in fubar.f.
 	
@@ -91,20 +91,20 @@ def read_hansard(train_dir, num_sentences):
             while e_readLine:  # "" is false directly
                 if not f_readLine:
                     continue
-                training_set['eng'].append(preprocess(e_readLine, 'e'))
-                training_set['fre'].append(preprocess(f_readLine, 'f'))
+                training_set['eng'].append(preprocess(e_readLine, 'e').split())
+                training_set['fre'].append(preprocess(f_readLine, 'f').split())
                 counter += 1
 
                 if counter >= num_sentences:
                     # The time is now
                     e_file.close()
                     f_file.close()
-                    return training_set
+                    return training_set['eng'], training_set['fre']
                 e_readLine = e_file.readline()
                 f_readLine = f_file.readline()
             e_file.close()
             f_file.close()
-    return training_set
+    return training_set['eng'], training_set['fre']
 
 
 def initialize(eng, fre):
@@ -131,10 +131,15 @@ def initialize(eng, fre):
 
         # Count all relationship from each english word to each french word!
         for j in range(len(eng_words)):
+            # remove these two
+            if eng_words[j] == "SENTSTART" or eng_words[j] == "SENTEND":
+                continue
             if eng_words[j] not in counting:
                 counting[eng_words[j]] = {}
             for k in range(len(fre_words)):
                 # There is a relation for this english word and all french word in the selected sentence
+                if fre_words[j] == "SENTSTART" or fre_words[j] == "SENTEND":
+                    continue
                 if fre_words[k] not in counting[eng_words[j]]:
                     counting[eng_words[j]][fre_words[k]] = 1
                 else:

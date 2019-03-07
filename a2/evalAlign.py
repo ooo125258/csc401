@@ -40,7 +40,7 @@ def _getLM(data_dir, language, fn_LM, use_cached=True):
     language_model = None
     if use_cached:
         with open(fn_LM + '.pickle', 'rb') as handle:
-            language_model = pickle.load(fn_LM + '.pickle')
+            language_model = pickle.load(handle)
     else:
         language_model = lm_train(data_dir, language, fn_LM)
     return language_model
@@ -104,24 +104,25 @@ def main(args):
     sTask5googlee = "/u/cs401/A2_SMT/data/Hansard/Testing/Task5.google.e"
     sData_dir = "/u/cs401/A2_SMT/data/Hansard/Training/"
     sFn_LM = "fn_LM"
+    sFn_AM = "fn_AM"
     try:
-        l2Hansard_eng_tokens = open(sTask5e).read().split('\n')
+        lHansard_eng = open(sTask5e).read().split('\n')
     except IOError:
-        print("Warning: following file failed to open: " + fTask5e)
-        l2Hansard_eng_tokens = []
+        print("Warning: following file failed to open: " + sTask5e)
+        lHansard_eng = []
     try:
-        l2Hansard_fre_tokens = open(sTask5f).read().split('\n')
+        lHansard_fre = open(sTask5f).read().split('\n')
     except IOError:
-        print("Warning: following file failed to open: " + fTask5f)
-        l2Hansard_fre_tokens = []
+        print("Warning: following file failed to open: " + sTask5f)
+        lHansard_fre = []
     try:
-        l2Google_eng_tokens = open(sTask5googlee).read().split('\n')
+        lGoogle_eng = open(sTask5googlee).read().split('\n')
     except IOError:
         print("Warning: following file failed to open: " + fTask5googlee)
-        l2Google_eng_tokens = []
+        lGoogle_eng = []
 
     #Read Lm
-    dLM = _getLM(sData_dir, 'e', sFn_LM)
+    dLM = _getLM(sData_dir, 'e', sFn_LM, not args.force_refresh)
     
     ## Write Results to Task5.txt (See e.g. Task5_eg.txt for ideation). ##
 
@@ -138,15 +139,21 @@ def main(args):
         # Am is the number of iterations. dAM is the dict of AM.
         #As 25*4*3, the iteration number is 3
         dAM = align_ibm1(sData_dir, AM, 3, sFn_AM)
-        
-        # Eval using 3 N-gram models #
-        all_evals = []
-        for n in range(1, 4):
-            f.write(f"\nBLEU scores with N-gram (n) = {n}: ")
-            evals = _get_BLEU_scores(...)
-            for v in evals:
-                f.write(f"\t{v:1.4f}")
-            all_evals.append(evals)
+        #25 sentences:
+        for i in range(25):
+            lSent_prep_fre = preprocess(lHansard_fre[i], 'f')
+            # Eval using 3 N-gram models #
+            all_evals = []
+            for n in range(1, 4):
+                lDecoded_fre = decode(lSent_prep_fre, dLM, dAM)
+                sHanzard_prep_ref_eng = preprocess(lHansard_eng[i], 'e')
+                sGoogle_prep_ref_eng = preprocess(lGoogle_eng[i], 'e')
+                                
+                f.write(f"\nBLEU scores with N-gram (n) = {n}: ")
+                evals = _get_BLEU_scores(lDecoded_fre, [sHanzard_prep_ref_eng, sGoogle_prep_ref_eng], n)
+                for v in evals:
+                    f.write(f"\t{v:1.4f}")
+                all_evals.append(evals)
 
         f.write("\n\n")
 
@@ -158,6 +165,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Use parser for debugging if needed")
+    parser.add_argument("-f", "--force_refresh", action="store_true", help="Use saved cached value to run to accelerate")
     args = parser.parse_args()
-
+    
     main(args)
