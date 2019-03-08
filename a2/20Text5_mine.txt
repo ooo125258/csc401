@@ -2,18 +2,7 @@
 Discussion :
 
 {Enter your intriguing discussion (explaining observations/results) here}
-This is the result for Task5. 
 
-Answer the Question: The reference translations are not the same between the Hanzard one and the Google one. For example, "We are suggesting that we could pass a better bill" and "We believe it is possible to do better". They are telling different things. The translation of Google is something closer to our common life, when the Hanzard translation is closer to the status in court. Another example is this "That is true for every member of Parliament" in Hanzard and "This applies to all deputies." in Google. The one in Hanzard emphesis the identities of the member to be explicit and serious. However, This method is useless for most of the time for the public so the Google translation prefer to use a translation to be easier to understand, when the public often use it to represent the ones in their preferred translation.
-It might be a better or worse choice, depending on the reference selected. If we find more better references, the length would be closer to the candidate thus the brevity would be more accurate. The precision would also be more accurate thus improve the accuracy of BLEU score. However, if we add more references, but the quality is not good, the reference will cover all of the correct and incorrect words and make a inflation on BLEU score. However, the accuracy of this model does not change. Then it would be a worse thing. Above all, quality is more important than quantity in references selection.
-
-
-BLEU score analysis 
-Generally the BLEU score would be increasing, as the increase of training set. The average of 25 BLEU scores are generally increasing when n is the same and there are more groups increased compared with the one decreased. As the size of the training set increase, the result should be more accurate. However, it's still clear that some of the BLEU scores are decreasing. One of the reason might be that the each english word has several meaning and each french word has several meaning. When the training set increases it makes the algorithm confuse but it can be solved by adding more training set. 
-However, when the length of n-gram increases, the BLEU score would decrease. The n-gram calculate the existance of the continuous occurance of the translation. However, IBM1 is basically an point to point translation and as a result, it will almost keep the word order in source language. However, google translation and Hanzard will follow some kind of English grammar. Thus, the scores for 2-gram and 3-gram would be much smaller, even to zero. Another problem is that the accuracy for each word is not perfect. And when two words are combined together without correlation in meaning it makes a mess when the datasize is small(too many outliers). It would be remitted when the datasize is higher.
-
-Tuning:
-As the iteration increases, the change of BLEU score decreases. The difference between the 20 iterations and 50 iterations is very small and the time is acceptable. Thus I choose 20 as iteration numbers.
 
 
 ----------Evaluation START----------
