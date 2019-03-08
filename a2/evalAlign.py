@@ -143,12 +143,13 @@ def main(args):
     """
     AMs = [1000, 10000, 15000, 30000]
     #Read file:
+    print("Start! Linking files:")
     sTask5e = "/u/cs401/A2_SMT/data/Hansard/Testing/Task5.e"
     sTask5f = "/u/cs401/A2_SMT/data/Hansard/Testing/Task5.f"
     sTask5googlee = "/u/cs401/A2_SMT/data/Hansard/Testing/Task5.google.e"
     sData_dir = "/u/cs401/A2_SMT/data/Hansard/Training/"
-    sFn_LM = "fn_LM"
-    sFn_AM = "fn_AM"
+    sFn_LM = args.fn_LM
+    sFn_AM = args.fn_AM
     try:
         lHansard_eng = open(sTask5e).read().split('\n')
     except IOError:
@@ -162,17 +163,18 @@ def main(args):
     try:
         lGoogle_eng = open(sTask5googlee).read().split('\n')
     except IOError:
-        print("Warning: following file failed to open: " + fTask5googlee)
+        print("Warning: following file failed to open: " + sTask5googlee)
         lGoogle_eng = []
 
     #Read Lm
+    print("GetLM:")
     dLM = _getLM(sData_dir, 'e', sFn_LM, not args.force_refresh)
-    
+    print("GetLM completed!")
     ## Write Results to Task5.txt (See e.g. Task5_eg.txt for ideation). ##
 
     
-    f = open("Task5.txt", 'w+')
-    f.write(discussion) 
+    f = open("Task5_mine.txt", 'w+')
+    f.write(discussion)
     f.write("\n\n")
     f.write("-" * 10 + "Evaluation START" + "-" * 10 + "\n")
     result = np.zeros((12,25)) #i * 3 + n, 25
@@ -181,7 +183,9 @@ def main(args):
         # Decode using AM #
         # Am is the number of iterations. dAM is the dict of AM.
         #As 25*4*3, the iteration number is 10 #TODO: test this value
+        print("GetAM for data size " + str(AM))
         dAM = align_ibm1(sData_dir, AM, 10, sFn_AM)
+        print("GetAM for data size " + str(AM) + " completed!")
         #25 sentences: 25 * each sentence, pre-handle first, to avoid extra preprocesses
         lsSent_prep_fre = []
         llDecoded_fre = []
@@ -195,6 +199,7 @@ def main(args):
             llDecoded_fre.append(decode.decode(sSent_prep_fre, dLM, dAM))
             lsHanzard_prep_ref_eng.append(preprocess(lHansard_eng[sent_idx], 'e'))
             lsGoogle_prep_ref_eng.append(preprocess(lGoogle_eng[sent_idx], 'e'))
+            print(1)
             
         for n in range(1, 4):
             f.write(f"\nBLEU scores with N-gram (n) = {n}: ")
@@ -203,7 +208,7 @@ def main(args):
             for v in evals:
                 f.write(f"\t{v:1.4f}")
             all_evals.append(evals)
-        
+        print("data size " + str(AM) + " Finished!")
         f.write("\n\n")
     #print(result, file=f)
     f.write("\n\n")
@@ -231,14 +236,16 @@ def brevity(iCandidate_tokens_len, references):
     #https:stackoverflow.com/questions/9706041
     iR_pos = min(range(len(liLen_ref)), key=lambda i : abs(liLen_ref[i] - iCandidate_tokens_len))
     if liLen_ref[iR_pos] <= iCandidate_tokens_len:#ri<ci
-        brevity_val = 1 
+        brevity_val = 1
     else: #exp(1-ri/ci)
         brevity_val = math.exp(1 - liLen_ref[iR_pos] / iCandidate_tokens_len)
-    return brevity_val 
+    return brevity_val
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Use parser for debugging if needed")
-    parser.add_argument("-f", "--force_refresh", action="store_true", help="Use saved cached value to run to accelerate")
+    parser.add_argument("-r", "--force_refresh", action="store_true", help="Use saved cached value to run to accelerate")
+    parser.add_argument("fn_LM", help="fn_LM")
+    parser.add_argument("fn_AM", help="fn_AM")
     args = parser.parse_args()
     
     main(args)

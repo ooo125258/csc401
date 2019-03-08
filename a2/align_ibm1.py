@@ -39,7 +39,7 @@ def align_ibm1(train_dir, num_sentences, max_iter, fn_AM):
     # for a number of iterations:
     temp_AM = AM
     for i in range(max_iter):
-        temp_AM = em_step(AM, training_data[0], training_data[1])
+        temp_AM = em_step(temp_AM, training_data[0], training_data[1])
     temp_AM["SENTSTART"] = {}
     temp_AM["SENTSTART"]["SENTSTART"] = 1
     temp_AM["SENTEND"] = {}
