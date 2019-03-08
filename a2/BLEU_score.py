@@ -31,12 +31,16 @@ def BLEU_score(candidate, references, n, brevity=False):
     for i in range(iNum_ngrams):
         sNgrams = ' '.join(lsCandidate_tokens[i : i + n])
         bExisted_in_ref = False
-        for eachref in references:
+        for eachref in range(len(references)):
             #Clear the SENTSTART AND SENTEND, NOTICE, we assume it exists!!!
-            
-            if sNgrams in eachref:
-                iCi += 1
-                break
+            if n == 1: #The special case: "la" in candidate to search in "declare" in reference
+                if sNgrams in sReal_ref[eachref]:
+                    iCi += 1
+                    break
+            else: #All others
+                if sNgrams in references[eachref]:
+                    iCi += 1
+                    break
     fP_n = (iCi * 1.0) / iNum_ngrams
 
                                                                                                                                 #Brevity for this only:

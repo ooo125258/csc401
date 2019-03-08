@@ -22,7 +22,7 @@ def preplexity(LM, test_dir, language, smoothing=False, delta=0):
     pp = 0
     N = 0
     vocab_size = len(LM["uni"])
-    
+    counter = 0
     for ffile in files:
         if ffile.split(".")[-1] != language:
             continue
@@ -35,14 +35,56 @@ def preplexity(LM, test_dir, language, smoothing=False, delta=0):
             if tpp > float("-inf"):
                 pp = pp + tpp
                 N += len(processed_line.split())
+            else:
+                counter += 1
         opened_file.close()
+    print("-inf:" + str(counter))
     if N > 0:
         pp = 2 ** (-pp / N)
     return pp
 
+lm_train_testdir = "/u/cs401/A2_SMT/data/Hansard/Testing/"
 
+def test_MLE():
+    with open("unsmoothed_perplexities.txt", "w") as file:
+        for lang in ["e", "f"]:
+            file.write("Lang: {}\n".format(lang))
+            test_LM = lm_train(lm_train_testdir, lang, "lm_{}_test".format(lang))
+            delta = 0
+            perplexity = preplexity(test_LM, lm_train_testdir, lang, smoothing = False, delta=delta)
+            file.write("{}\n".format( perplexity))
+#         format out all the perplexities
+
+
+
+def test_smoothings():
+    with open("smoothed_perplexities.txt", "w") as file:
+        # do it for each language, and for each delta
+        for lang in ["e", "f"]:
+            file.write("Lang: {}\n".format(lang))
+            test_LM = lm_train(lm_train_testdir, lang, "lm_{}_test".format(lang))
+            #
+            for delta_percent in range(0, 100, 10):
+                delta = float(delta_percent)/100
+                perplexity = preplexity(test_LM, lm_train_testdir, lang, smoothing = True, delta=delta)
+                file.write("Delta: {}, Perplex: {}\n".format(delta, perplexity))
+
+            #     now call the perplexity
+
+
+
+
+        pass
+
+    pass
+
+
+    
 # test
 if __name__ == "__main__":
+    test_MLE()
+    test_smoothings()
+    print("------------------------------------")
     data_dir = "/u/cs401/A2_SMT/data/Hansard/Testing/"
     saved_files = '/h/u15/c4/00/sunchuan/csc401/a2/'
     fn_LMe = os.path.join(saved_files, "Task3_LMe")

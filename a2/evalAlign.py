@@ -67,7 +67,6 @@ def _getAM(data_dir, num_sent, max_iter, fn_AM, use_cached=True):
         with open(fn_AM + '.pickle', 'rb') as handle:
             alignment_model = pickle.load(handle)
     else:
-        
         alignment_model = align_ibm1(data_dir, num_sent, max_iter, fn_AM)
     return alignment_model
     #pass
@@ -90,47 +89,22 @@ def _get_BLEU_scores(eng_decoded, eng, google_refs, n):
     #Warning! you need to fully debug what happened!
     lflRet = []
     for i in range(len(eng_decoded)):
+        if i == 20:
+            print (1)
         #BLEU_score will only return the p_n, when false
         lPs = np.zeros(n)
         iCandidate_tokens_len = len(eng_decoded[i].split())
         lsReferences = [eng[i], google_refs[i]]
         brevity_val = brevity(iCandidate_tokens_len, lsReferences)
         for j in range(n):
+            if j == 0:
+                print(1)
             lPs[j] = BLEU_score(eng_decoded[i], lsReferences, j + 1)
             #Warning, we assume it starts at STENSTART and end in STENEND.
         flScore = brevity_val * math.pow(np.prod(lPs), 1.0 / n)
         lflRet.append(flScore)
     return lflRet
-    
-def _get_BLEU_score(eng_decoded, eng, google_refs, n):
-    """
-    Yes, I calculate TRUE blue score here!
-    Parameters
-    ----------
-    eng_decoded : str decoded sentence
-    eng         : str of reference handsard
-    google_refs : str of reference google translated sentence
-    n           : the 'n' in the n-gram model being used
 
-    Returns
-    -------
-    evaluation (BLEU) score for the sentences
-    """
-    #Warning! you need to fully debug what happened!
-    lflRet = []
-    
-    #BLEU_score will only return the p_n, when false
-    lPs = np.zeros(n)
-    iCandidate_tokens_len = len(eng_decoded.split())
-    lsReferences = [eng, google_refs]
-    brevity_val = brevity(iCandidate_tokens_len, lsReferences)
-    for j in range(n):
-        lPs[j] = BLEU_score(eng_decoded, lsReferences, j + 1)
-        #Warning, we assume it starts at STENSTART and end in STENEND.
-    flScore = brevity_val * math.pow(np.prod(lPs), 1.0 / n)
-    #lflRet.append(flScore)
-    
-    return flScore
 
 def main(args):
     """
@@ -201,7 +175,7 @@ def main(args):
             lsHanzard_prep_ref_eng.append(preprocess(lHansard_eng[sent_idx], 'e'))
             lsGoogle_prep_ref_eng.append(preprocess(lGoogle_eng[sent_idx], 'e'))
         for sent_idx in range(25):
-            pass#print("Candidate: {}\nHanzard: {}\nGoogle: {}\n".format(llDecoded_fre[sent_idx], lsHanzard_prep_ref_eng[sent_idx], lsGoogle_prep_ref_eng[sent_idx]))
+            print("Candidate: {}\nHanzard: {}\nGoogle: {}\n".format(llDecoded_fre[sent_idx], lsHanzard_prep_ref_eng[sent_idx], lsGoogle_prep_ref_eng[sent_idx]))
         for n in range(1, 4):
             f.write(f"\nBLEU scores with N-gram (n) = {n}: ")
             #for sent_idx in range(25):
