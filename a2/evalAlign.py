@@ -89,16 +89,14 @@ def _get_BLEU_scores(eng_decoded, eng, google_refs, n):
     #Warning! you need to fully debug what happened!
     lflRet = []
     for i in range(len(eng_decoded)):
-        if i == 20:
-            print (1)
+        
         #BLEU_score will only return the p_n, when false
         lPs = np.zeros(n)
         iCandidate_tokens_len = len(eng_decoded[i].split())
         lsReferences = [eng[i], google_refs[i]]
         brevity_val = brevity(iCandidate_tokens_len, lsReferences)
         for j in range(n):
-            if j == 0:
-                print(1)
+            
             lPs[j] = BLEU_score(eng_decoded[i], lsReferences, j + 1)
             #Warning, we assume it starts at STENSTART and end in STENEND.
         flScore = brevity_val * math.pow(np.prod(lPs), 1.0 / n)
@@ -116,6 +114,10 @@ def main(args):
     It's entirely upto you how you want to write Task5.txt. This is just
     an (sparse) example.
     """
+    iterations = [20]#[1,2,5,10,20,50,100]
+    #As the iteration increases, the change of BLEU score decreases.
+    #The difference between the 20 iterations and 50 iterations is very small and the time is acceptable.
+    #Thus I choose 20 as iteration numbers.
     AMs = [1000, 10000, 15000, 30000]
     #Read file:
     print("Start! Linking files:")
@@ -143,52 +145,54 @@ def main(args):
 
     #Read Lm
     print("GetLM:")
-    dLM = _getLM(sData_dir, 'e', sFn_LM, not args.force_refresh)
+    dLM = _getLM(sData_dir, 'e', sFn_LM, not args.force_refreshLM)
     print("GetLM completed!")
     ## Write Results to Task5.txt (See e.g. Task5_eg.txt for ideation). ##
-
-    f = open(args.test5, 'w+')
-    f.write(discussion)
-    f.write("\n\n")
-    f.write("-" * 10 + "Evaluation START" + "-" * 10 + "\n")
-    result = np.zeros((12,25)) #i * 3 + n, 25
-    for i, AM in enumerate(AMs):
-        print("\n### Evaluating AM model: {} ### \n".format(AMs[i]), file=f)
-        # Decode using AM #
-        # Am is the number of iterations. dAM is the dict of AM.
-        #As 25*4*3, the iteration number is 10 #TODO: test this value
-        print("GetAM for data size " + str(AM))
-        dAM = _getAM(sData_dir, AM, 10, sFn_AM+str(AM), not args.force_refresh)
-        #dAM = align_ibm1(sData_dir, AM, 10, sFn_AM)
-        print("GetAM for data size " + str(AM) + " completed!")
-        #25 sentences: 25 * each sentence, pre-handle first, to avoid extra preprocesses
-        lsSent_prep_fre = []
-        llDecoded_fre = []
-        lsHanzard_prep_ref_eng = []
-        lsGoogle_prep_ref_eng = []
-        for sent_idx in range(25):
-            sSent_prep_fre = preprocess(lHansard_fre[sent_idx], 'f')
-            lsSent_prep_fre.append(sSent_prep_fre)
-            # Eval using 3 N-gram models #
-            all_evals = []
-            llDecoded_fre.append(decode.decode(sSent_prep_fre, dLM, dAM))
-            lsHanzard_prep_ref_eng.append(preprocess(lHansard_eng[sent_idx], 'e'))
-            lsGoogle_prep_ref_eng.append(preprocess(lGoogle_eng[sent_idx], 'e'))
-        for sent_idx in range(25):
-            print("Candidate: {}\nHanzard: {}\nGoogle: {}\n".format(llDecoded_fre[sent_idx], lsHanzard_prep_ref_eng[sent_idx], lsGoogle_prep_ref_eng[sent_idx]))
-        for n in range(1, 4):
-            f.write(f"\nBLEU scores with N-gram (n) = {n}: ")
-            #for sent_idx in range(25):
-            evals = _get_BLEU_scores(llDecoded_fre, lsHanzard_prep_ref_eng, lsGoogle_prep_ref_eng, n)
-            for v in evals:
-                f.write(f"\t{v:1.4f}")
-            all_evals.append(evals)
-        print("data size " + str(AM) + " Finished!")
+    for iter in iterations:
+        print("iter: " + str(iter))
+        f = open(str(iter) + args.test5, 'w+')
+        print("file open: "+str(iter) + args.test5)
+        f.write(discussion)
         f.write("\n\n")
-    #print(result, file=f)
-    f.write("\n\n")
-    f.write("-" * 10 + "Evaluation END" + "-" * 10 + "\n")
-    f.close()
+        f.write("-" * 10 + "Evaluation START" + "-" * 10 + "\n")
+        result = np.zeros((12,25)) #i * 3 + n, 25
+        for i, AM in enumerate(AMs):
+            print("\n### Evaluating AM model: {} ### \n".format(AMs[i]), file=f)
+            # Decode using AM #
+            # Am is the number of iterations. dAM is the dict of AM.
+            #As 25*4*3, the iteration number is 10 #TODO: test this value
+            print("GetAM for data size " + str(AM))
+            dAM = _getAM(sData_dir, AM, iter, sFn_AM+str(AM), not args.force_refreshAM)
+            #dAM = align_ibm1(sData_dir, AM, 10, sFn_AM)
+            print("GetAM for data size " + str(AM) + " completed!")
+            #25 sentences: 25 * each sentence, pre-handle first, to avoid extra preprocesses
+            lsSent_prep_fre = []
+            llDecoded_fre = []
+            lsHanzard_prep_ref_eng = []
+            lsGoogle_prep_ref_eng = []
+            for sent_idx in range(25):
+                sSent_prep_fre = preprocess(lHansard_fre[sent_idx], 'f')
+                lsSent_prep_fre.append(sSent_prep_fre)
+                # Eval using 3 N-gram models #
+                all_evals = []
+                llDecoded_fre.append(decode.decode(sSent_prep_fre, dLM, dAM))
+                lsHanzard_prep_ref_eng.append(preprocess(lHansard_eng[sent_idx], 'e'))
+                lsGoogle_prep_ref_eng.append(preprocess(lGoogle_eng[sent_idx], 'e'))
+            #for sent_idx in range(25):
+                #print("Candidate: {}\nHanzard: {}\nGoogle: {}\n".format(llDecoded_fre[sent_idx], lsHanzard_prep_ref_eng[sent_idx], lsGoogle_prep_ref_eng[sent_idx]))
+            for n in range(1, 4):
+                f.write(f"\nBLEU scores with N-gram (n) = {n}: ")
+                #for sent_idx in range(25):
+                evals = _get_BLEU_scores(llDecoded_fre, lsHanzard_prep_ref_eng, lsGoogle_prep_ref_eng, n)
+                for v in evals:
+                    f.write(f"\t{v:1.4f}")
+                all_evals.append(evals)
+            print("data size " + str(AM) + " Finished!")
+            f.write("\n\n")
+        #print(result, file=f)
+        f.write("\n\n")
+        f.write("-" * 10 + "Evaluation END" + "-" * 10 + "\n")
+        f.close()
     
     pass
 
@@ -217,6 +221,7 @@ def brevity(iCandidate_tokens_len, references):
     return brevity_val
 
 if __name__ == "__main__":
+    '''
     print("Sample Test:")
     candidate1 = "It is a guide to action which ensures that the military always obeys the commands of the party"
     candidate2 = "It is to insure the troops forever hearing the activity guidebook that party direct"
@@ -228,6 +233,7 @@ if __name__ == "__main__":
     print(BLEU_score(candidate2, references, n))
     candidate3 = "I fear David"
     ref = ["I am afraid Dave", "I am scared Dave", "I have fear David"]
+    n = 2
     lPs = np.zeros(n)
     iCandidate_tokens_len = len(candidate3.split())
     lsReferences = ref
@@ -239,8 +245,17 @@ if __name__ == "__main__":
     print(lPs)
     flScore = brevity_val * math.pow(np.prod(lPs), 1.0 / n)
     print(flScore)
+    
+    n=1
+    rst1 = BLEU_score(candidate3, lsReferences, 1, True)
+    rst2 = brevity(iCandidate_tokens_len, lsReferences) * BLEU_score(candidate3, lsReferences, 1)
+    print(rst1)
+    print(rst2)
+    '''
     parser = argparse.ArgumentParser(description="Use parser for debugging if needed")
     parser.add_argument("-r", "--force_refresh", action="store_true", help="Use saved cached value to run to accelerate")
+    parser.add_argument("-LM", "--force_refreshLM", action="store_true", help="")
+    parser.add_argument("-AM", "--force_refreshAM", action="store_true", help="")
     parser.add_argument("fn_LM", help="fn_LM")
     parser.add_argument("fn_AM", help="fn_AM")
     parser.add_argument("test5", help="test5")

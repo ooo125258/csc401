@@ -39,7 +39,9 @@ def align_ibm1(train_dir, num_sentences, max_iter, fn_AM):
     # for a number of iterations:
     temp_AM = AM
     for i in range(max_iter):
-        temp_AM = em_step(temp_AM, training_data[0], training_data[1])
+        temp_AM1 = em_step(temp_AM, training_data[0], training_data[1])
+        print("compare dict value in align_ibm1: " + str(temp_AM1 == temp_AM))
+        temp_AM = temp_AM1
     temp_AM["SENTSTART"] = {}
     temp_AM["SENTSTART"]["SENTSTART"] = 1
     temp_AM["SENTEND"] = {}
@@ -205,17 +207,24 @@ def em_step(AM, eng, fre):
                 # total(e) += P(f|e) * F.count(f) * E.count(e) / denom_c
                 total[e] += value_added
     # for each e in domain(total(:)):
+    new_AM = {}
     for e in total:
         # for each f in domain(tcount(:,e)):
+        new_AM[e] = {}
         for f in tcount[e]:
+            new_AM[e][f] = tcount[e][f] / total[e]
+            #if abs(new_AM[e][f]/ AM[e][f] - 1) > 0.1:
+            #    print("Correcting!")
             # P(f|e) = tcount(f, e) / total(e)
-            if e not in AM:
-                AM[e] = {}
-            if total[e] == 0:
-                AM[e][f] = 0
-            else:
-                AM[e][f] = tcount[e][f] / total[e]
-    return AM
+            #if e not in AM:
+            #    AM[e] = {}
+            #if total[e] == 0:
+            #    AM[e][f] = 0
+            #else:
+            #    if AM[e][f] != tcount[e][f] / total[e]:
+            #        print(1)
+            #    AM[e][f] = tcount[e][f] / total[e]
+    return new_AM
 
 
 def unique_word(sentence):

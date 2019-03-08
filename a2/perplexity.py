@@ -3,7 +3,7 @@ from preprocess import *
 import os
 
 
-def preplexity(LM, test_dir, language, smoothing=False, delta=0):
+def preplexity(LM, test_dir, language, smoothing=False, delta=0, penalty=0):
     """
 	Computes the preplexity of language model given a test corpus
 	
@@ -36,20 +36,23 @@ def preplexity(LM, test_dir, language, smoothing=False, delta=0):
                 pp = pp + tpp
                 N += len(processed_line.split())
             else:
+                if penalty != 0:
+                    pp = pp + penalty
+                    N += len(processed_line.split())
                 counter += 1
         opened_file.close()
     print("-inf:" + str(counter))
     if N > 0:
         pp = 2 ** (-pp / N)
     return pp
-
+lm_train_dir = "/u/cs401/A2_SMT/data/Hansard/Training/"
 lm_train_testdir = "/u/cs401/A2_SMT/data/Hansard/Testing/"
 
 def test_MLE():
     with open("unsmoothed_perplexities.txt", "w") as file:
         for lang in ["e", "f"]:
             file.write("Lang: {}\n".format(lang))
-            test_LM = lm_train(lm_train_testdir, lang, "lm_{}_test".format(lang))
+            test_LM = lm_train(lm_train_dir, lang, "lm_{}_test".format(lang))
             delta = 0
             perplexity = preplexity(test_LM, lm_train_testdir, lang, smoothing = False, delta=delta)
             file.write("{}\n".format( perplexity))
@@ -62,9 +65,9 @@ def test_smoothings():
         # do it for each language, and for each delta
         for lang in ["e", "f"]:
             file.write("Lang: {}\n".format(lang))
-            test_LM = lm_train(lm_train_testdir, lang, "lm_{}_test".format(lang))
-            #
-            for delta_percent in range(0, 100, 10):
+            test_LM = lm_train(lm_train_dir, lang, "lm_{}_test".format(lang))
+            lst = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90 ]
+            for delta_percent in lst:#range(0, 100, 10):
                 delta = float(delta_percent)/100
                 perplexity = preplexity(test_LM, lm_train_testdir, lang, smoothing = True, delta=delta)
                 file.write("Delta: {}, Perplex: {}\n".format(delta, perplexity))
@@ -85,11 +88,12 @@ if __name__ == "__main__":
     test_MLE()
     test_smoothings()
     print("------------------------------------")
-    data_dir = "/u/cs401/A2_SMT/data/Hansard/Testing/"
+    train_dir = "/u/cs401/A2_SMT/data/Hansard/Training/"
+    test_dir = "/u/cs401/A2_SMT/data/Hansard/Testing/"
     saved_files = '/h/u15/c4/00/sunchuan/csc401/a2/'
     fn_LMe = os.path.join(saved_files, "Task3_LMe")
     
-    test_LM = lm_train(data_dir, 'e', fn_LMe)
-    print(preplexity(test_LM, data_dir, "e"))
+    test_LM = lm_train(train_dir, 'e', fn_LMe)
+    print(preplexity(test_LM, test_dir, "e"))
 # test_LM = lm_train("lm_train_testdir/", "e", "e_temp")
 # print(preplexity(test_LM, "lm_train_testdir/", "e"))

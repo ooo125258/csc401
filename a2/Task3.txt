@@ -1,0 +1,51 @@
+Not smoothed:
+Lang: e
+15.993993164537814
+Lang: f
+14.736840101550502
+
+Smoothed:
+Lang: e
+Delta: 0.0001, Perplex: 16.361499995347472
+Delta: 0.0002, Perplex: 16.64129591838177
+Delta: 0.0005, Perplex: 17.283691970801286
+Delta: 0.001, Perplex: 18.081564562501196
+Delta: 0.002, Perplex: 19.277625345814492
+Delta: 0.005, Perplex: 21.76402098440399
+Delta: 0.01, Perplex: 24.66036751439689
+Delta: 0.02, Perplex: 28.874439830842586
+Delta: 0.05, Perplex: 37.62241104705236
+Delta: 0.1, Perplex: 48.11678405735988
+Delta: 0.2, Perplex: 64.10536398346234
+Delta: 0.3, Perplex: 77.24054443376043
+Delta: 0.4, Perplex: 88.85587494464704
+Delta: 0.5, Perplex: 99.47064404136799
+Delta: 0.6, Perplex: 109.35424697641758
+Delta: 0.7, Perplex: 118.66902169645769
+Delta: 0.8, Perplex: 127.52238798130193
+Delta: 0.9, Perplex: 135.99014108611001
+Lang: f
+Delta: 0.0001, Perplex: 15.209590652511945
+Delta: 0.0002, Perplex: 15.551049798799315
+Delta: 0.0005, Perplex: 16.31042013562677
+Delta: 0.001, Perplex: 17.229406444867376
+Delta: 0.002, Perplex: 18.581558953768226
+Delta: 0.005, Perplex: 21.345166896980285
+Delta: 0.01, Perplex: 24.529897245884033
+Delta: 0.02, Perplex: 29.146553346955287
+Delta: 0.05, Perplex: 38.77480941561691
+Delta: 0.1, Perplex: 50.49633984149736
+Delta: 0.2, Perplex: 68.74318203719262
+Delta: 0.3, Perplex: 84.0396652035894
+Delta: 0.4, Perplex: 97.75717325731495
+Delta: 0.5, Perplex: 110.4265276336704
+Delta: 0.6, Perplex: 122.32294145592087
+Delta: 0.7, Perplex: 133.6125392463586
+Delta: 0.8, Perplex: 144.40556715627153
+Delta: 0.9, Perplex: 154.78009834990507
+
+We can see the Preplex is increasing steadly, as the increase of delta. 
+The reason to have delta is to soften the extreme circunstance and give a chance to non-existed choice in training set. As we increase the delta, it's more balanced. Thus, the entropy would increase as the probabilities balance. The perplexity is the exponentiation of the entropy so it will also increase.
+It's also decided by the algorithm we use in this code. As delta increases, the count numbers and vocabSize keep the same, the log_prob should decrease. Thus, the tpp would decrease. As pp = pp + tpp, pp increased in line 36. The N would be the same so 2 ** (-pp / N) should be increase, which is the final preplexity score.
+we can find the perplexity would be the smallest from the data, when there is no smoothing(MLE). However, that's becuase we ignore the existance of the words which are in Test cases but not the Train cases. The estimation is inaccurate and meaningless in this circumstance. The real perplexity should be bigger for MLE, depends on the missing words. Theoretically, we can get this throughout a penalty to a potential loss.
+
