@@ -19,28 +19,28 @@ def BLEU_score(candidate, references, n, brevity=False):
 	bleu_score :	(float) The BLEU score
 	"""
 	
-	#TODO: Implement by student.
+    #TODO: Implement by student.
     #We only calculate p_n in this function.
     #@431, tie will not be tested. just find the closest
     # We assume it will start from
-    lsCandidate_tokens = candidate.split()[1:-1]
+    lsCandidate_tokens = candidate.split()
     iCandidate_tokens_len = len(lsCandidate_tokens)
     iNum_ngrams = iCandidate_tokens_len - n + 1
-    sReal_ref = [ref.split()[1:-1] for ref in references]
+    sReal_ref = [ref.split() for ref in references]
     iCi = 0
     for i in range(iNum_ngrams):
         sNgrams = ' '.join(lsCandidate_tokens[i : i + n])
         bExisted_in_ref = False
-        for eachref in sReal_ref:
+        for eachref in references:
             #Clear the SENTSTART AND SENTEND, NOTICE, we assume it exists!!!
             
-            if sNgrams in " ".join(eachref):
+            if sNgrams in eachref:
                 iCi += 1
                 break
     fP_n = (iCi * 1.0) / iNum_ngrams
 
-    #Brevity for this only:
-    if n == 1 and brevity == True:
+                                                                                                                                #Brevity for this only:
+    if n == 1 and brevity:
         #Find the nearest length
         liLen_ref = [len(sReal_ref[i]) for i in range(len(sReal_ref))]
         #https:stackoverflow.com/questions/9706041
@@ -52,3 +52,9 @@ def BLEU_score(candidate, references, n, brevity=False):
     else:
         bleu_score = fP_n
     return bleu_score
+    
+if __name__ == '__main__':
+    candidate = "It is a guide to action which ensures that the military always obeys the commands of the party"
+    references = ["It is a guide to action that ensures that the military will forever heed Party commands", "It is the guiding principle which guarantees the military forces always being under command of the Party", "It is the practical guide for the army always to heed the directions of the party"]
+    n = 1
+    BLEU_score(candidate, references, n, brevity=False)

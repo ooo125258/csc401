@@ -1,6 +1,6 @@
 # from lm_train import *
 # from log_prob import *
-from som_preprocess import *
+from preprocess import *
 from math import log
 import os
 import pickle

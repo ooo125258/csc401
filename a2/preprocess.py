@@ -23,17 +23,18 @@ def preprocess(in_sentence, language):
 
     #split commas, colons,
     #semicolons, parentheses, dashes, mathmatical operators, quotationmarks
-    modComm = re.sub(r"([\!\"\#\$\%\&\\\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~])", r" \1 ", modComm)
+    modComm = re.sub(r"([\.\?\!\,\:\;\(\)\+\-\<\>\=\"])", r" \1 ", modComm)
+    #modComm = re.sub(r"([\!\"\#\$\%\&\\\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\]\^\_\`\{\|\}\~])", r" \1 ", modComm)
 
     if language == 'f':
         #l', or L'
         modComm = re.sub(r"(^|\s)(l\')(\w+)", "\1\2 \3", modComm)
         #single-consonnant words with e-muet #except some d
-        modComm = re.sub(r"(^|\s)([bcdfghjkmnpqrstvxz]\')(\w+)", r"\1\2 \3", modComm)
+        modComm = re.sub(r"(^|\s)([bcfghjkmnpqrstvxz]\')(\w+)", r"\1\2 \3", modComm)
         #que
         modComm = re.sub(r"(^|\s)(qu\')(\w+)", r"\1\2 \3", modComm)
         #conjuctions puisque and lorsque
-        modComm = re.sub(r"(\')(on|il)", r"\1 \2", modComm)
+        modComm = re.sub(r"(\')(on|il)(\s|$)", r"\1 \2\3", modComm)
     #Code from a1
         #The d word:
         def d_word_handler(matched):
@@ -44,9 +45,10 @@ def preprocess(in_sentence, language):
                 word = word.replace("'", " ' ")
                 return ' ' + word + ' '
         modComm = re.sub(r"(^|\s)d\'\w+", d_word_handler, modComm)
-
-        #strip and add tags
-        modComm = modComm.strip()
-        modComm = re.sub(r"\s+", r" ", modComm)
+    else:
+        modComm = modComm.replace("'", " ' ")
+    # strip and add tags
+    modComm = modComm.strip()
+    modComm = re.sub(r"\s+", r" ", modComm)
     out_sentence = "SENTSTART " + modComm + " SENTEND"
     return out_sentence

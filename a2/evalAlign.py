@@ -67,7 +67,8 @@ def _getAM(data_dir, num_sent, max_iter, fn_AM, use_cached=True):
         with open(fn_AM + '.pickle', 'rb') as handle:
             alignment_model = pickle.load(handle)
     else:
-        alignment_model = align_ibm1(data_dir, num_sent, max_iter)
+        
+        alignment_model = align_ibm1(data_dir, num_sent, max_iter, fn_AM)
     return alignment_model
     #pass
 
@@ -91,7 +92,7 @@ def _get_BLEU_scores(eng_decoded, eng, google_refs, n):
     for i in range(len(eng_decoded)):
         #BLEU_score will only return the p_n, when false
         lPs = np.zeros(n)
-        iCandidate_tokens_len = len(eng_decoded[i].split()) - 2
+        iCandidate_tokens_len = len(eng_decoded[i].split())
         lsReferences = [eng[i], google_refs[i]]
         brevity_val = brevity(iCandidate_tokens_len, lsReferences)
         for j in range(n):
@@ -120,7 +121,7 @@ def _get_BLEU_score(eng_decoded, eng, google_refs, n):
     
     #BLEU_score will only return the p_n, when false
     lPs = np.zeros(n)
-    iCandidate_tokens_len = len(eng_decoded.split()) - 2
+    iCandidate_tokens_len = len(eng_decoded.split())
     lsReferences = [eng, google_refs]
     brevity_val = brevity(iCandidate_tokens_len, lsReferences)
     for j in range(n):
@@ -172,8 +173,7 @@ def main(args):
     print("GetLM completed!")
     ## Write Results to Task5.txt (See e.g. Task5_eg.txt for ideation). ##
 
-    
-    f = open("Task5_mine.txt", 'w+')
+    f = open(args.test5, 'w+')
     f.write(discussion)
     f.write("\n\n")
     f.write("-" * 10 + "Evaluation START" + "-" * 10 + "\n")
@@ -184,7 +184,8 @@ def main(args):
         # Am is the number of iterations. dAM is the dict of AM.
         #As 25*4*3, the iteration number is 10 #TODO: test this value
         print("GetAM for data size " + str(AM))
-        dAM = align_ibm1(sData_dir, AM, 10, sFn_AM)
+        dAM = _getAM(sData_dir, AM, 10, sFn_AM+str(AM), not args.force_refresh)
+        #dAM = align_ibm1(sData_dir, AM, 10, sFn_AM)
         print("GetAM for data size " + str(AM) + " completed!")
         #25 sentences: 25 * each sentence, pre-handle first, to avoid extra preprocesses
         lsSent_prep_fre = []
@@ -199,8 +200,8 @@ def main(args):
             llDecoded_fre.append(decode.decode(sSent_prep_fre, dLM, dAM))
             lsHanzard_prep_ref_eng.append(preprocess(lHansard_eng[sent_idx], 'e'))
             lsGoogle_prep_ref_eng.append(preprocess(lGoogle_eng[sent_idx], 'e'))
-            print(1)
-            
+        for sent_idx in range(25):
+            pass#print("Candidate: {}\nHanzard: {}\nGoogle: {}\n".format(llDecoded_fre[sent_idx], lsHanzard_prep_ref_eng[sent_idx], lsGoogle_prep_ref_eng[sent_idx]))
         for n in range(1, 4):
             f.write(f"\nBLEU scores with N-gram (n) = {n}: ")
             #for sent_idx in range(25):
@@ -230,7 +231,7 @@ def brevity(iCandidate_tokens_len, references):
     '''
     brevity_val = 0
     #Warning! We assume it's embedded by STEN!
-    sReal_ref = [" ".join(ref.split()[1:-1]) for ref in references]
+    sReal_ref = [ref.split() for ref in references]
     #Find the nearest length
     liLen_ref = [len(sReal_ref[i]) for i in range(len(sReal_ref))]
     #https:stackoverflow.com/questions/9706041
@@ -242,10 +243,34 @@ def brevity(iCandidate_tokens_len, references):
     return brevity_val
 
 if __name__ == "__main__":
+    print("Sample Test:")
+    candidate1 = "It is a guide to action which ensures that the military always obeys the commands of the party"
+    candidate2 = "It is to insure the troops forever hearing the activity guidebook that party direct"
+    references = ["It is a guide to action that ensures that the military will forever heed Party commands", "It is the guiding principle which guarantees the military forces always being under command of the Party", "It is the practical guide for the army always to heed the directions of the party"]
+    n = 1
+    print(BLEU_score(candidate1, references, n))
+    n = 2
+    print(BLEU_score(candidate1, references, n))
+    print(BLEU_score(candidate2, references, n))
+    candidate3 = "I fear David"
+    ref = ["I am afraid Dave", "I am scared Dave", "I have fear David"]
+    lPs = np.zeros(n)
+    iCandidate_tokens_len = len(candidate3.split())
+    lsReferences = ref
+    brevity_val = brevity(iCandidate_tokens_len, lsReferences)
+    print(brevity_val)
+    for j in range(n):
+        lPs[j] = BLEU_score(candidate3, lsReferences, j + 1)
+        #Warning, we assume it starts at STENSTART and end in STENEND.
+    print(lPs)
+    flScore = brevity_val * math.pow(np.prod(lPs), 1.0 / n)
+    print(flScore)
     parser = argparse.ArgumentParser(description="Use parser for debugging if needed")
     parser.add_argument("-r", "--force_refresh", action="store_true", help="Use saved cached value to run to accelerate")
     parser.add_argument("fn_LM", help="fn_LM")
     parser.add_argument("fn_AM", help="fn_AM")
+    parser.add_argument("test5", help="test5")
     args = parser.parse_args()
     
     main(args)
+    

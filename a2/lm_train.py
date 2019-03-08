@@ -53,8 +53,7 @@ def lm_train(data_dir, language, fn_LM):
                         LM['bi'][lTokens[i]][lTokens[i + 1]] = 1
                     else:
                         LM['bi'][lTokens[i]][lTokens[i + 1]] += 1
-                sLine = fDatafile.readline()
-    language_model = LM                
+    language_model = LM
     #Save Model
     with open(fn_LM+'.pickle', 'wb') as handle:
         pickle.dump(language_model, handle, protocol=pickle.HIGHEST_PROTOCOL)

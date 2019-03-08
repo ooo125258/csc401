@@ -30,7 +30,7 @@ def evalAlign(hansard_english, hansard_french, google_english, LM_PATH, train_di
 
     # decode and calculate blue score for AM models trained on different num_sentences
     # and BLEU_scores calculated on different n-grams
-    for num_sentences in [1000, 10000, 15000, 30000]:
+    for num_sentences in [1000]:#, 10000, 15000, 30000]:
         AM = align_ibm1(train_dir, num_sentences, 5, fn_AM)
         for f in range(25):
             fproc = preprocess(hansard_french[f], 'f')
