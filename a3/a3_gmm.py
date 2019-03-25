@@ -138,7 +138,7 @@ def train( speaker, X, M=8, epsilon=0.0, maxIter=20 ):
     while i <= maxIter and improvement >= epsilon:
         precomputed = preComputedForEachM(myTheta)
         for m in range(M):
-            for t in tqdm(range(T)):
+            for t in range(T):
                 log_Bs[m,t] = log_b_m_x(m, X[t], myTheta, precomputed)
         #Bs = np.exp(log_Bs)
         
@@ -172,13 +172,34 @@ def test( mfcc, correctID, models, k=5 ):
                [SNAME1] [LOGLIK1]
                [SNAME2] [LOGLIK2]
                ...
-               [SNAMEK] [LOGLIKK] 
+               [SNAMEK] [LOGLIKK]
 
         e.g.,
                S-5A -9.21034037197
         the format of the log likelihood (number of decimal places, or exponent) does not matter
+        mfcc is sth like x, models is sth like list of mytheta
+        #NOTICE: This is not the correct format, just for me to debug!!!
     '''
     bestModel = -1
+    M, d = models[0].Sigma.shape
+    T = mfcc.shape[0]
+
+    Ls = np.zeros((len(models)))
+    for i in range(len(models)):
+        precomputed = preComputedForEachM(models[i])
+        log_Bs = np.zeros((M, T))
+        for m in range(M):
+            for t in range(T):
+                log_Bs[m, t] = log_b_m_x(m, mfcc[t], models[i], precomputed)
+        Ls[i] = logLik(log_Bs, models[i])
+    Desc_order = np.argsort(Ls)[::-1]
+    best_k = Desc_order[:k]
+    bestModel = Desc_order[0]
+    print("The correct model should be {}.".format(models[correctID].name))
+    print("The best model might be {}.".format(models[bestModel].name))
+    for i in range(len(best_k)):
+        print("Model: {} Likelihood: {}".format(models[i].name, Ls[i]))
+
     print ('TODO')
     return 1 if (bestModel == correctID) else 0
 
@@ -218,7 +239,7 @@ def UpdateParameters(myTheta, X, Ps, L):
 
     
 if __name__ == "__main__":
-
+    load = True
     trainThetas = []
     testMFCCs = []
     print('TODO: you will need to modify this main block for Sec 2.3')
@@ -228,27 +249,50 @@ if __name__ == "__main__":
     epsilon = 0.0
     maxIter = 20
     random.seed(0)
-    # train a model for each speaker, and reserve data for testing
-    for subdir, dirs, files in os.walk(dataDir):
-        for speaker in dirs:
-            print( speaker )
-
-            files = fnmatch.filter(os.listdir( os.path.join( dataDir, speaker ) ), '*npy')
-            random.shuffle( files )
-            
-            testMFCC = np.load( os.path.join( dataDir, speaker, files.pop() ) )
-            testMFCCs.append( testMFCC )
-
-            X = np.empty((0,d))
-            for file in files:
-                myMFCC = np.load( os.path.join( dataDir, speaker, file ) )
-                X = np.append( X, myMFCC, axis=0)
-
-            trainThetas.append( train(speaker, X, M, epsilon, maxIter) )
-
-    # evaluate 
-    numCorrect = 0;
-    for i in range(0,len(testMFCCs)):
-        numCorrect += test( testMFCCs[i], i, trainThetas, k ) 
-    accuracy = 1.0*numCorrect/len(testMFCCs)
+    if not load:
+        # train a model for each speaker, and reserve data for testing
+        for subdir, dirs, files in os.walk(dataDir):
+            for speaker in tqdm(dirs):
+                print( speaker )
+    
+                files = fnmatch.filter(os.listdir( os.path.join( dataDir, speaker ) ), '*npy')
+                random.shuffle( files )
+                
+                testMFCC = np.load( os.path.join( dataDir, speaker, files.pop() ) )
+                testMFCCs.append( testMFCC )
+    
+                X = np.empty((0,d))
+                for file in files:
+                    myMFCC = np.load( os.path.join( dataDir, speaker, file ) )
+                    X = np.append( X, myMFCC, axis=0)
+    
+                trainThetas.append( train(speaker, X, M, epsilon, maxIter) )
+    
+        # evaluate
+        numCorrect = 0;
+        import pickle
+        with open('outfile', 'wb') as fp:
+            pickle.dump(trainThetas, fp)
+        for i in tqdm(range(0,len(testMFCCs))):
+            numCorrect += test( testMFCCs[i], i, trainThetas, k )
+        accuracy = 1.0*numCorrect/len(testMFCCs)
+        print(accuracy)
+    else:
+        import pickle
+        with open('outfile', 'rb') as fp:
+            trainThetas = pickle.load(fp)
+        for subdir, dirs, files in os.walk(dataDir):
+            for speaker in tqdm(dirs):
+                print(speaker)
+        
+                files = fnmatch.filter(os.listdir(os.path.join(dataDir, speaker)), '*npy')
+                random.shuffle(files)
+        
+                testMFCC = np.load(os.path.join(dataDir, speaker, files.pop()))
+                testMFCCs.append(testMFCC)
+        numCorrect = 0;
+        for i in tqdm(range(0,len(testMFCCs))):
+            numCorrect += test( testMFCCs[i], i, trainThetas, k )
+        accuracy = 1.0*numCorrect/len(testMFCCs)
+        print(accuracy)
 
