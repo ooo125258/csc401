@@ -1,11 +1,12 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
-import scipy as sp
+from scipy.special import logsumexp
 import os, fnmatch
 import random
 from tqdm import tqdm
 import copy
 dataDir = '/u/cs401/A3/data/'
+np.random.seed(seed=131)
 
 class theta:
     def __init__(self, name, M=8,d=13):
@@ -55,26 +56,39 @@ def log_p_m_x( m, x, myTheta, preComputedForM = []):
     ''' Returns the log probability of the m^{th} component given d-dimensional vector x, and model myTheta
         See equation 2 of handout
     '''
+    #I cannot use log a + log b - logc form because some of them might be negative!
     M, d = myTheta.Sigma.shape
-    numo = np.dot(myTheta.omega[m], log_b_m_x(m, x, myTheta, preComputedForM))
+    numo = np.dot(myTheta.omega[m], np.exp(log_b_m_x(m, x, myTheta, preComputedForM)))
     deno = 0
     for k in range(M):
-        deno += np.dot(myTheta.omega[k], log_b_m_x(k, x, myTheta, preComputedForM))
+        deno += np.dot(myTheta.omega[k], np.exp(log_b_m_x(k, x, myTheta, preComputedForM)))
+    if deno == 0.:
+        return 0.
     rst = np.log(numo / deno)
     return rst
     print ( 'TODO' )
 
 def log_p_m_x_given( m, log_Bs, t, myTheta, preComputedForM = []):
     ''' Returns the log probability of the m^{th} component given d-dimensional vector x, and model myTheta
-        Given log_Bs
+        Given Bs
     '''
     M, d = myTheta.Sigma.shape
-    numo = np.dot(myTheta.omega[m], log_Bs[m,t])
-    numo2 = myTheta.omega[m] * log_Bs[m, t]
+    logOmega = np.log(myTheta.omega)
+    log_WBs = logOmega[m] + log_Bs[m,t]
+    denos = logOmega + log_Bs[:, t].reshape(-1, 1)
+    rst = log_WBs - logsumexp(denos)
+    
+    '''
+    sign = 1
+    signm = np.sign(Bs)
+    numo = np.dot(myTheta.omega[m], Bs[m,t])
     deno = 0
     for k in range(M):
-        deno += myTheta.omega[k] * log_Bs[k,t]
-    rst = np.log(numo / deno)
+        deno += myTheta.omega[k] * Bs[k,t]
+    if deno == 0.:
+        return 0.
+    rst = np.log(numo / deno)#(warning: divided by zero)
+    '''
     return rst
     print ( 'TODO' )
     
@@ -94,7 +108,7 @@ def logLik( log_Bs, myTheta ):
     '''
     #p_xt = np.sum(np.dot(myTheta.omega, ))
     log_Ws = np.log(myTheta.omega)
-    rst = sp.special.logsumexp(log_Bs + log_Ws, axis=0) # TODO:logsumexp
+    rst = logsumexp(log_Bs + log_Ws, axis=0) # TODO:logsumexp
     return np.sum(rst)
     print( 'TODO' )
 
@@ -108,34 +122,39 @@ def train( speaker, X, M=8, epsilon=0.0, maxIter=20 ):
     i = 0
     T = X.shape[0]
     M, d = myTheta.Sigma.shape
-    np.fill_diagonal(myTheta.Sigma, 1)
+    myTheta.Sigma[:,:] = 1
     indices = np.random.choice(X.shape[0], M, replace=False)
     myTheta.mu = X[indices]
     myTheta.omega[:, 0] = 1. / M
     
     logLik_array = np.zeros((M, T))
     #prev L := −∞ ; improvement = ∞;
-    prev_L = np.inf
-    improvement = np.inf
+    prev_L = np.NINF
+    improvement = np.Inf
 
     log_Bs = np.zeros((M, T))
     log_Ps = np.zeros((M, T))
     #while i =< maxIter and improvement >=  do
-    precomputed = preComputedForEachM(myTheta)
     while i <= maxIter and improvement >= epsilon:
+        precomputed = preComputedForEachM(myTheta)
         for m in range(M):
             for t in tqdm(range(T)):
                 log_Bs[m,t] = log_b_m_x(m, X[t], myTheta, precomputed)
-        for m in range(M):
-            for t in tqdm(range(T)):
+        #Bs = np.exp(log_Bs)
+        
+        log_WBs = log_Bs + np.log(myTheta.omega)
+        log_Ps = log_WBs - logsumexp(log_WBs, axis=0)
+        #for m in range(M):
+        #    for t in tqdm(range(T)):
                 #log_Ps[m, t] = log_p_m_x(m, X[t], myTheta, precomputed)
-                log_Ps[m, t] = log_p_m_x_given(m, log_Bs, t, myTheta)
+       #         log_Ps[m, t] = log_p_m_x_given(m, log_Bs, t, myTheta)
+        Ps = np.exp(log_Ps)
         
     #    ComputeIntermediateResults ;
     #    L := ComputeLikelihood (X, θ) ;
         L = logLik(log_Bs, myTheta)
     #    θ := UpdateParameters (θ, X, L) ;
-        myTheta = UpdateParameters(myTheta, X, log_Ps, L)
+        myTheta = UpdateParameters(myTheta, X, Ps, L)
     #    improvement := L − prev L ;
         improvement = L - prev_L
     #    prev L := L ;
@@ -185,9 +204,10 @@ def preComputedForEachM(myTheta):
     term2s = term2_1 + term2_2 + term2_3
     return term2s
 
-def UpdateParameters(myTheta, X, log_Ps, L):
+def UpdateParameters(myTheta, X, Ps, L):
     newTheta = copy.deepcopy(myTheta)
-    Ps = np.exp(log_Ps)
+    T = X.shape[0]
+    #Ps = np.exp(log_Ps)
     newTheta.omega = np.average(Ps, axis=1).reshape(-1,1)
     #Weighted mean, weight xt, mean p
     newTheta.mu = np.divide(np.dot(Ps, X), np.sum(Ps, axis=1).reshape(-1,1))
@@ -195,7 +215,7 @@ def UpdateParameters(myTheta, X, log_Ps, L):
     square_x_term = np.divide(np.dot(Ps, np.square(X)), np.sum(Ps, axis=1).reshape(-1,1))
     newTheta.Sigma = square_x_term - np.square(newTheta.mu)
     return newTheta 
-    pass
+
     
 if __name__ == "__main__":
 
@@ -207,6 +227,7 @@ if __name__ == "__main__":
     M = 8
     epsilon = 0.0
     maxIter = 20
+    random.seed(0)
     # train a model for each speaker, and reserve data for testing
     for subdir, dirs, files in os.walk(dataDir):
         for speaker in dirs:
