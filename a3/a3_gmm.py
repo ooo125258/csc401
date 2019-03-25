@@ -25,15 +25,16 @@ def log_b_m_x(m, x, myTheta, preComputedForM=[]):
     '''
     #Format pt.2. Term2 might be preComputed
     #TODO: need to debug when the train is permitted. At least the np dots.
-    sigmaSqr = np.square(myTheta.Sigma[m])
-    mask = sigmaSqr != 0
-    inv_sigmaSqr = sigmaSqr
-    inv_sigmaSqr[mask] = np.reciprocal(sigmaSqr[mask])
+    mask = myTheta.Sigma[m] != 0
+    inv_sigmaSqr = np.array(myTheta.Sigma[m], copy=True)
+    inv_sigmaSqr[mask] = np.reciprocal(myTheta.Sigma[m][mask])
+    
     term1_1 = 0.5 * np.square(x) * inv_sigmaSqr
     term1_2 = myTheta.mu[m] * x * inv_sigmaSqr
     term1_beforesum = term1_1 - term1_2
     term1 = np.sum(term1_beforesum)# TODO: axis of term1?
     
+    # checker:
     term2 = preComputedForM[m]
     '''
     #preComputedForM
@@ -136,7 +137,9 @@ def train( speaker, X, M=8, epsilon=0.0, maxIter=20 ):
     log_Ps = np.zeros((M, T))
     #while i =< maxIter and improvement >=  do
     while i <= maxIter and improvement >= epsilon:
-        precomputed = preComputedForEachM(myTheta)
+        if i == 1:
+            print(1)
+        precomputed,term2_1s = preComputedForEachM(myTheta)
         for m in range(M):
             for t in range(T):
                 log_Bs[m,t] = log_b_m_x(m, X[t], myTheta, precomputed)
@@ -198,7 +201,7 @@ def test( mfcc, correctID, models, k=5 ):
     print("The correct model should be {}.".format(models[correctID].name))
     print("The best model might be {}.".format(models[bestModel].name))
     for i in range(len(best_k)):
-        print("Model: {} Likelihood: {}".format(models[i].name, Ls[i]))
+        print("Model: {} Likelihood: {}".format(models[best_k[i]].name, Ls[best_k[i]]))
 
     print ('TODO')
     return 1 if (bestModel == correctID) else 0
@@ -208,10 +211,9 @@ def preComputedForEachM(myTheta):
     # For term2 in log_Bs
     
     # preComputedForM
-    sigmaSqr = np.square(myTheta.Sigma)
-    mask = sigmaSqr != 0
-    inv_sigmaSqr = np.zeros(sigmaSqr.shape)
-    inv_sigmaSqr[mask] = np.reciprocal(sigmaSqr[mask])
+    mask = myTheta.Sigma != 0
+    inv_sigmaSqr = np.array(myTheta.Sigma, copy=True)
+    inv_sigmaSqr[mask] = np.reciprocal(myTheta.Sigma[mask])
     
     term2_1_inner = 0.5 * np.square(myTheta.mu) * inv_sigmaSqr
     term2_1 = np.sum(term2_1_inner, axis=1)
@@ -220,10 +222,12 @@ def preComputedForEachM(myTheta):
     # Original
     #term2_4 = 0.5 * np.log(np.prod(sigmaSqr[mask], axis=1)), in 8 columns
     # Calculated
-    term2_3_inner = np.log(myTheta.Sigma, where=(myTheta.Sigma != 0.))
+    #term2_3_inner = np.log(myTheta.Sigma, where=(myTheta.Sigma != 0.))#TODO: prod 0.5
+    term2_3_inner = 0.5 * np.log(myTheta.Sigma, where=(myTheta.Sigma != 0.))
     term2_3 = np.sum(term2_3_inner, axis = 1)# TODO: check when sigma is not 1, if it still performs correctly.
     term2s = term2_1 + term2_2 + term2_3
     return term2s
+
 
 def UpdateParameters(myTheta, X, Ps, L):
     newTheta = copy.deepcopy(myTheta)
