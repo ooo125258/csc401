@@ -139,8 +139,8 @@ def train( speaker, X, M=8, epsilon=0.0, maxIter=20 ):
     while i <= maxIter and improvement >= epsilon:
         if i == 1:
             print(1)
-        precomputed,term2_1s = preComputedForEachM(myTheta)
-        for m in range(M):
+        precomputed = preComputedForEachM(myTheta)
+        for m in tqdm(range(M)):
             for t in range(T):
                 log_Bs[m,t] = log_b_m_x(m, X[t], myTheta, precomputed)
         #Bs = np.exp(log_Bs)
@@ -195,15 +195,19 @@ def test( mfcc, correctID, models, k=5 ):
             for t in range(T):
                 log_Bs[m, t] = log_b_m_x(m, mfcc[t], models[i], precomputed)
         Ls[i] = logLik(log_Bs, models[i])
-    Desc_order = np.argsort(Ls)[::-1]
-    best_k = Desc_order[:k]
-    bestModel = Desc_order[0]
-    print("The correct model should be {}.".format(models[correctID].name))
-    print("The best model might be {}.".format(models[bestModel].name))
-    for i in range(len(best_k)):
-        print("Model: {} Likelihood: {}".format(models[best_k[i]].name, Ls[best_k[i]]))
-
-    print ('TODO')
+    if k > 0:
+        Desc_order = np.argsort(Ls)[::-1]
+        best_k = Desc_order[:k]
+        bestModel = Desc_order[0]
+        '''
+        print("The correct model should be {}.".format(models[correctID].name))
+        print("The best model might be {}.".format(models[bestModel].name))
+        for i in range(len(best_k)):
+            print("Model: {} Likelihood: {}".format(models[best_k[i]].name, Ls[best_k[i]]))
+        '''
+        print("\n" + models[bestModel].name)
+        for i in range(len(best_k)):
+            print(models[best_k[i]].name + " " + str(Ls[best_k[i]]))
     return 1 if (bestModel == correctID) else 0
 
 
@@ -243,7 +247,7 @@ def UpdateParameters(myTheta, X, Ps, L):
 
     
 if __name__ == "__main__":
-    load = True
+    load = False
     trainThetas = []
     testMFCCs = []
     print('TODO: you will need to modify this main block for Sec 2.3')
