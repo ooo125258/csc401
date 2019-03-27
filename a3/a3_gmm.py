@@ -28,41 +28,71 @@ def log_b_m_x(m, x, myTheta, preComputedForM=[]):
     mask = myTheta.Sigma[m] != 0
     inv_sigmaSqr = np.array(myTheta.Sigma[m], copy=True)
     inv_sigmaSqr[mask] = np.reciprocal(myTheta.Sigma[m][mask])
-    
-    term1_1 = 0.5 * np.square(x) * inv_sigmaSqr
-    term1_2 = myTheta.mu[m] * x * inv_sigmaSqr
+    square_x = np.square(x).T    
+    term1_1 = 0.5 * np.dot(inv_sigmaSqr, square_x)
+    term1_2 = myTheta.mu[m] * np.dot(inv_sigmaSqr, square_x)
     term1_beforesum = term1_1 - term1_2
     term1 = np.sum(term1_beforesum)# TODO: axis of term1?
-    
+
+    term2 = 0
     # checker:
-    term2 = preComputedForM[m]
+    if len(preComputedForM) == 0:
+        mask = myTheta.Sigma[m] != 0
+        inv_sigmaSqr = np.array(myTheta.Sigma[m], copy=True)
+        inv_sigmaSqr[mask] = np.reciprocal(myTheta.Sigma[m][mask])
+        
+        term2_1_inner = 0.5 * np.square(myTheta.mu[m]) * inv_sigmaSqr
+        term2_1 = np.sum(term2_1_inner, axis=1)
+        term2_2 = d / 2 * np.log(2 * np.pi)
+        term2_3_inner = 0.5 * np.log(myTheta.Sigma[m], where=(myTheta.Sigma[m] != 0.))
+        term2_3 = np.sum(term2_3_inner, axis = 1)# TODO: check when sigma is not 1, if it still performs correctly.
+        term2 = term2_1 + term2_2 + term2_3
+    else:
+        term2 = preComputedForM[m]
+    
+    rst = - term1 - term2
+    return rst
+    print ( 'TODO' )
+
+def log_b_m_x_given(x, myTheta, preComputedForM=[], term2_1=[]):
+    ''' Returns the log probability of d-dimensional vector x using only component m of model myTheta
+        See equation 1 of the handoutd
+
+        As you'll see in tutorial, for efficiency, you can precompute something for 'm' that applies to all x outside of this function.
+        If you do this, you pass that precomputed component in preComputedForM
     '''
-    #preComputedForM
-    term2_1_inner = 0.5 * np.square(myTheta.mu[m]) * inv_sigmaSqr
-    term2_1 = np.sum(term2_1_inner)
-    term2_2 = d / 2 * np.log(2 * np.pi)
-    #0.5 log Pi \sigma^2[n] = 0.5 Sigma log \sigma^2[n] = Sigma log \sigma[n]
-    #Original
-    term2_4 = 0.5 * np.log(np.prod(sigmaSqr[mask]))
-    #Calculated
-    term2_3 = np.sum(np.log(myTheta.Sigma[m][mask]))
-    term2 = term2_1 + term2_2 + term2_3
-    '''
+    #Format pt.2. Term2 might be preComputed
+    #TODO: need to debug when the train is permitted. At least the np dots.
+    mask = myTheta.Sigma != 0
+    inv_sigmaSqr = np.array(myTheta.Sigma, copy=True)
+    inv_sigmaSqr[mask] = np.reciprocal(myTheta.Sigma[mask])
+
+    term1_1_step = np.einsum("ik,jk->ijk", inv_sigmaSqr, np.square(x))
+    term1_1 = 0.5 * term1_1_step
+    term1_2_step = np.einsum("ik,jk->ijk", inv_sigmaSqr, x)
+
+    term1_2 = np.einsum("ik,ijk->ijk", myTheta.mu, term1_2_step)
+    term1_beforesum = term1_1 - term1_2
+    term1 = np.sum(term1_beforesum, axis=-1)# TODO: axis of term1?
+    T =x.shape[0]
+    preComputedForM_expanded = np.repeat(preComputedForM, T).reshape(-1, T)
+    term2 = preComputedForM_expanded
+    
     rst = - term1 - term2
     return rst
     print ( 'TODO' )
 
     
-def log_p_m_x( m, x, myTheta, preComputedForM = []):
+def log_p_m_x( m, x, myTheta):
     ''' Returns the log probability of the m^{th} component given d-dimensional vector x, and model myTheta
         See equation 2 of handout
     '''
     #I cannot use log a + log b - logc form because some of them might be negative!
     M, d = myTheta.Sigma.shape
-    numo = np.dot(myTheta.omega[m], np.exp(log_b_m_x(m, x, myTheta, preComputedForM)))
+    numo = np.dot(myTheta.omega[m], np.exp(log_b_m_x(m, x, myTheta)))
     deno = 0
     for k in range(M):
-        deno += np.dot(myTheta.omega[k], np.exp(log_b_m_x(k, x, myTheta, preComputedForM)))
+        deno += np.dot(myTheta.omega[k], np.exp(log_b_m_x(k, x, myTheta)))
     if deno == 0.:
         return 0.
     rst = np.log(numo / deno)
@@ -137,12 +167,8 @@ def train( speaker, X, M=8, epsilon=0.0, maxIter=20 ):
     log_Ps = np.zeros((M, T))
     #while i =< maxIter and improvement >=  do
     while i <= maxIter and improvement >= epsilon:
-        if i == 1:
-            print(1)
         precomputed = preComputedForEachM(myTheta)
-        for m in tqdm(range(M)):
-            for t in range(T):
-                log_Bs[m,t] = log_b_m_x(m, X[t], myTheta, precomputed)
+        log_Bs = log_b_m_x_given(X, myTheta, precomputed)
         #Bs = np.exp(log_Bs)
         
         log_WBs = log_Bs + np.log(myTheta.omega)
@@ -191,9 +217,11 @@ def test( mfcc, correctID, models, k=5 ):
     for i in range(len(models)):
         precomputed = preComputedForEachM(models[i])
         log_Bs = np.zeros((M, T))
-        for m in range(M):
-            for t in range(T):
-                log_Bs[m, t] = log_b_m_x(m, mfcc[t], models[i], precomputed)
+        #for m in range(M):
+            #for t in range(T):
+                #log_Bs[m, t] = log_b_m_x(m, mfcc[t], models[i], precomputed)
+        log_Bs = log_b_m_x_given(mfcc, models[i], precomputed)
+
         Ls[i] = logLik(log_Bs, models[i])
     if k > 0:
         Desc_order = np.argsort(Ls)[::-1]
