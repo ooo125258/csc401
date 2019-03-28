@@ -4,9 +4,10 @@ from tqdm import tqdm
 import re
 from scipy import stats
 dataDir = '/u/cs401/A3/data/'
+#import matplotlib as plt
+import matplotlib.pyplot as plt
 
-
-def Levenshtein(r, h):
+def wer(r, h):
     """                                                                         
     Calculation of WER with Levenshtein distance.                               
                                                                                 
@@ -35,42 +36,54 @@ def Levenshtein(r, h):
     n = len(r)
     # m ← Thenumberofwords in HYP
     m = len(h)
+    if n == 0 and m == 0:
+        return None, 0,0,0
+    elif n == 0:
+        return np.Inf, 0, m, 0
+    elif m == 0:
+        return 1, 0, 0, n
     # R ← zeros(n + 1, m + 1) // Matrixofdistances
     R = np.zeros((n + 1, m + 1))
     # B ← zeros(n + 1, m + 1) // Backtrackingmatrix
     B = np.zeros((n + 1, m + 1, 3))
     # Foralli, j s.t.i = 0 or j = 0, set R[i, j] ← ∞, except R[0, 0] ← 0
-    R[0, :] = np.inf
-    R[:, 0] = np.inf
+    R[0, :] = np.arange(0, m + 1)
+    R[:, 0] = np.arange(0, n + 1)
     R[0, 0] = 0
-    
+    B[:,0,0] = np.arange(0, n + 1)#Declare Deletion
+    B[0,:,1] = np.arange(0, m + 1)#Declare Insertion
     # for i = 1..n do
     for i in range(1, n + 1):
         #     for j = 1..m do
         for j in range(1, m + 1):
             #         del ← R[i − 1, j] + 1
-            nDel = R[i - 1, j] + 1
-            #         sub ← R[i − 1, j − 1] + (REF[i] == HY P[j])?0: 1
-            sub = R[i - 1, j - 1] + (0 if r[i-1] == h[j-1] else 1)  # Sure? i and j?
+            deleted = R[i - 1, j] + 1
             #         ins ← R[i, j − 1] + 1
             ins = R[i, j - 1] + 1
+            #         sub ← R[i − 1, j − 1] + (REF[i] == HY P[j])?0: 1
+            cost = 0 if r[i - 1] == h[j - 1] else 1
+            sub = R[i - 1, j - 1] + cost  # Sure? i and j?
             #         R[i, j] ← Min(del, sub, ins )
-            R[i, j] = min(nDel, sub, ins)
+            R[i, j] = min(deleted, ins, sub)
             #         if R[i, j] == del then
-            if R[i, j] == nDel:
+            if R[i, j] == deleted:
                 #             B[i, j] ← ‘up’
+
                 B[i, j, :] = B[i - 1, j, :]
                 B[i, j, 0] += 1
             #         else if R[i, j] == ins then
             elif R[i, j] == ins:
                 #             B[i, j] ← ‘left’
                 B[i, j, :] = B[i, j - 1, :]
-                B[i ,j ,1] += 1
+                B[i, j, 1] += 1
             #         else
             else:
                 #             B[i, j] ← ‘up - left’
+                
                 B[i, j, :] = B[i - 1, j - 1, :]
-                B[i, j, 2] += (0 if r[i - 1] == h[j - 1] else 1)
+                B[i, j, 2] += cost
+                
+    print(B)
     return np.round(R[-1, -1] / n, 4), B[-1, -1, 2], B[-1, -1, 1], B[-1, -1, 0]
 
 def preprocess1(in_sentence):
@@ -85,7 +98,6 @@ def preprocess2(in_sentence):
     return in_sentence.strip().split()
     
 if __name__ == "__main__":
-    print('TODO')
     trans_ref = None
     trans_google = None
     trans_kaldi = None
@@ -123,11 +135,21 @@ if __name__ == "__main__":
         normality = "Both Google({}) and Kaldi({}) marks are normal by shapiro test.".format(shapiro_google[1], shapiro_kaldi[1])
     else:
         normality = "At least one in Google({}) and Kaldi({}) marks are not normal by shapiro test. So test is not accurate.".format(shapiro_google[1], shapiro_kaldi[1])
-
+    
+    series1 = stats.probplot(wer_Google, dist="norm")
+    p1 = plt.plot(series1[0][0], series1[0][1])
+    plt.show(p1)
+    series1 = stats.probplot(wer_Google, dist="norm")
+    p1 = plt.plot(series1[0][0], series1[0][1])
+    plt.show(p1)
+    series1 = stats.probplot(np.array(wer_Google) - np.array(wer_Kaldi), dist="norm")
+    p1 = plt.plot(series1[0][0], series1[0][1])
+    plt.show(p1)
+    print(stats.shapiro(np.array(wer_Google) - np.array(wer_Kaldi)))
     rst = stats.ttest_rel(wer_Google, wer_Kaldi)
-    normality += "Paired t test, p-value {}".format(rst[1])
+    normality += "wolcoxon t test, p-value {}".format(rst[1])
     print(normality)
-        
+    
                     
 
             

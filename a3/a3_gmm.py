@@ -243,6 +243,7 @@ def preComputedForEachM(myTheta):
     # For term2 in log_Bs
     
     # preComputedForM
+    M, d = myTheta.Sigma.shape
     mask = myTheta.Sigma != 0
     inv_sigmaSqr = np.array(myTheta.Sigma, copy=True)
     inv_sigmaSqr[mask] = np.reciprocal(myTheta.Sigma[mask])
