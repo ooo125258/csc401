@@ -7,7 +7,7 @@ dataDir = '/u/cs401/A3/data/'
 #import matplotlib as plt
 import matplotlib.pyplot as plt
 
-def wer(r, h):
+def Levenshtein(r, h):
     """                                                                         
     Calculation of WER with Levenshtein distance.                               
                                                                                 
@@ -45,7 +45,7 @@ def wer(r, h):
     # R ← zeros(n + 1, m + 1) // Matrixofdistances
     R = np.zeros((n + 1, m + 1))
     # B ← zeros(n + 1, m + 1) // Backtrackingmatrix
-    B = np.zeros((n + 1, m + 1, 3))
+    B = np.zeros((n + 1, m + 1, 3), dtype=int)
     # Foralli, j s.t.i = 0 or j = 0, set R[i, j] ← ∞, except R[0, 0] ← 0
     R[0, :] = np.arange(0, m + 1)
     R[:, 0] = np.arange(0, n + 1)
@@ -83,7 +83,6 @@ def wer(r, h):
                 B[i, j, :] = B[i - 1, j - 1, :]
                 B[i, j, 2] += cost
                 
-    print(B)
     return np.round(R[-1, -1] / n, 4), B[-1, -1, 2], B[-1, -1, 1], B[-1, -1, 0]
 
 def preprocess1(in_sentence):
@@ -127,27 +126,20 @@ if __name__ == "__main__":
                     WER2, S2, I2, D2 = Levenshtein(line_ref, preprocess2(trans_kaldi_lines[i]))
                     print("{} {} {} {} S:{}, I:{}, D:{}".format(speaker,"Kaldi" , i, WER2, S2, I2, D2), file=fOut)
                     wer_Kaldi.append(WER2)
-    print("Kaldi Avg: {} Google Avg: {} Kaldi std: {} Google std: {} ".format(np.mean(wer_Kaldi), np.mean(wer_Google), np.std(wer_Kaldi), np.std(wer_Google)), file=fOut)
-    shapiro_google = stats.shapiro(wer_Google)
-    shapiro_kaldi = stats.shapiro(wer_Kaldi)
-    normality = ""
-    if (shapiro_google[1] > 0.05 and shapiro_kaldi[1] > 0.05):
-        normality = "Both Google({}) and Kaldi({}) marks are normal by shapiro test.".format(shapiro_google[1], shapiro_kaldi[1])
-    else:
-        normality = "At least one in Google({}) and Kaldi({}) marks are not normal by shapiro test. So test is not accurate.".format(shapiro_google[1], shapiro_kaldi[1])
-    
-    series1 = stats.probplot(wer_Google, dist="norm")
-    p1 = plt.plot(series1[0][0], series1[0][1])
-    plt.show(p1)
-    series1 = stats.probplot(wer_Google, dist="norm")
-    p1 = plt.plot(series1[0][0], series1[0][1])
-    plt.show(p1)
-    series1 = stats.probplot(np.array(wer_Google) - np.array(wer_Kaldi), dist="norm")
-    p1 = plt.plot(series1[0][0], series1[0][1])
-    plt.show(p1)
-    print(stats.shapiro(np.array(wer_Google) - np.array(wer_Kaldi)))
     rst = stats.ttest_rel(wer_Google, wer_Kaldi)
-    normality += "wolcoxon t test, p-value {}".format(rst[1])
+    betterone = ""
+    if rst[1] > 0.5:
+        betterone = "None"
+    elif rst[1] > 0:
+        betterone = "Kaldi"
+    else:
+        betterone = "Google"
+    print("Kaldi Avg: {} Google Avg: {} Kaldi std: {} Google std: {}. paired t test, p-value {}, \
+    test statistics {}, {} has better performance than the other!".format(np.mean(wer_Kaldi), np.mean(wer_Google), np.std(wer_Kaldi), np.std(wer_Google), rst[1], rst[0], betterone), file=fOut)
+    
+    normality = ""
+    rst = stats.ttest_rel(wer_Kaldi, wer_Google)
+    normality += "ttest_rel t test, p-value {}".format(rst[1])
     print(normality)
     
                     
